@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/2020-12/schema",
+  "_comment": "Edit freely. Each line tags character + mood; the pet's expression matches the line it speaks. mood = a slug in expressions.MOODS. Moods in expressions.TRANSITION_MOODS (andrew: neutral/inlove/shy/explaining; ashley: embarrased/happy/inlove) do a -1/-2 transition on speak(). `text` may be a string (single bubble) or a list of strings (multi-bubble monologue: bubbles show in turn, expression set once). `dialogues` holds fixed exchange sequences the InteractionDirector plays as a 'scripted' scene. Optional 'weight' (default 1.0) makes a line rarer.",
+  "lines": [
+    {"character": "andrew", "mood": "scared",  "text": "What?"},
+    {"character": "andrew", "mood": "thinking",   "text": "..."},
+    {"character": "andrew", "mood": "desperate",  "text": "Why won't you believe me?"},
+    {"character": "andrew", "mood": "frown",    "text": "Knock it off."},
+    {"character": "andrew", "mood": "cute",   "text": "Your existence will forever be celebrated with lemon flavored dough and preservatives!"},
+    {"character": "andrew", "mood": "happy","text": "And you're the least worst, Leyley."},
+    {"character": "andrew", "mood": "unhappy",    "text": "You don't love me. Not one bit."},
+    {"character": "andrew", "mood": "furious",    "text": "Fuck, it always is! It's always you, you, you, you, YOU!"},
+    {"character": "andrew", "mood": "mad",        "text": "Oh, you wanna play THAT game?"},
+    {"character": "andrew", "mood": "disdain", "text": "Explain how you love me, because I just don't see it."},
+    {"character": "andrew", "mood": "blue",    "text": "Are you done?"},
+    {"character": "andrew", "mood": "worried",    "text": "Not again."},
+    {"character": "andrew", "mood": "indifferent",    "text": "Not now."},
+    {"character": "andrew", "mood": "pissed_off",  "text": "I said I'm fine."},
+    {"character": "andrew", "mood": "thinking",  "text": "If they come for us, I'll say it was all me."},
+    {"character": "andrew", "mood": "furious",    "text": "Why are you testing my patience?"},
+    {"character": "andrew", "mood": "shy",        "text": "Stop looking at me like that."},
+    {"character": "andrew", "mood": "desperate",  "text": "Don't cry, Leyley. Please don't cry."},
+    {"character": "andrew", "mood": "give_up",    "text": "...Fine, you win. Again."},
+    {"character": "andrew", "mood": "indifferent","text": "I don't care."},
+    {"character": "andrew", "mood": "unhappy",    "text": "Leave me alone."},
+    {"character": "andrew", "mood": "frown",    "text": "Can you not?"},
+    {"character": "andrew", "mood": "unhappy",    "text": "Give me a break."},
+    {"character": "andrew", "mood": "speechless","text": "Forget it."},
+    {"character": "andrew", "mood": "demanding",  "text": "Come over."},
+    {"character": "andrew", "mood": "unhappy",  "text": "Say it back."},
+    {"character": "andrew", "mood": "come_on","text": "Whatever you want."},
+    {"character": "andrew", "mood": "fuck",    "text": "You always do this."},
+    {"character": "andrew", "mood": "fuck",    "text": "I should've known."},
+    {"character": "andrew", "mood": "rapture",      "text": "D'aww, a hug! Why, thank you thank you!"},
+    {"character": "andrew", "mood": "inlove",     "text": "I love you Ashley."},
+    {"character": "andrew", "mood": "desperate",  "text": "Ashley, I'm begging you... I'm so tired of this..."},
+    {"character": "andrew", "mood": "fake_calm",    "text": "I'm sorry for being upset."},
+    {"character": "andrew", "mood": "desperate",     "text": "I've been yours my whole life..."},
+    {"character": "andrew", "mood": "give_up",    "text": "What is your problem?!!"},
+    {"character": "andrew", "mood": "desperate",    "text": "I like you but you're so exhausting..."},
+    {"character": "andrew", "mood": "content",  "text": "From now on nothing can get between us."},
+    {"character": "andrew", "mood": "anxious",  "text": "Ashley, please... I really really would like some space right now."},
+    {"character": "andrew", "mood": "disdain",  "text": "What?"},
+    {"character": "andrew", "mood": "blue", "text": ["There is the you.", "Always you. Endlessly you.", "Sad, miserable, pitiful, tiresome, worthless, center of my world, you.", "You with your teeth on my heart.", "You, out of touch, and out of reach."]},
+    {"character": "andrew", "mood": "proud", "text": ["Leyley, you are a miserable, loathsome being that has worn its way into every aspect of my life.", "And for that, my heart will always have a rotten, moldy sore spot just for you."]},
+    {"character": "andrew", "mood": "speechless",   "text": "..."},
+    {"character": "andrew", "mood": "give_up",     "text": "I've been yours my whole life..."},
+    {"character": "andrew", "mood": "inlove",     "text": "There's only one Leyley."},
+    {"character": "andrew", "mood": "proud",     "text": "Am I not right here?"},
+
+
+
+    {"character": "ashley", "mood": "pout",        "text": "Andy Andy Andy."},
+    {"character": "ashley", "mood": "hmm",      "text": "I'm bored."},
+    {"character": "ashley", "mood": "emotionally_hurt", "text": "Why are you pushing me away?"},
+    {"character": "ashley", "mood": "chuckle",    "text": "You're weirding me out."},
+    {"character": "ashley", "mood": "pout",        "text": "Andrew, you need me."},
+    {"character": "ashley", "mood": "confident",        "text": "Andrew, you need me."},
+    {"character": "ashley", "mood": "scolding",         "text": "Screw you!"},
+    {"character": "ashley", "mood": "regreful",         "text": "I don't think you like anyone, honestly."},
+    {"character": "ashley", "mood": "hmm",              "text": "Yeah?"},
+    {"character": "ashley", "mood": "hmm",              "text": "Hm?"},
+    {"character": "ashley", "mood": "worried",          "text": "Andy?"},
+    {"character": "ashley", "mood": "happy",         "text": "Liar, liar, liar, liar..."},
+    {"character": "ashley", "mood": "giggles",          "text": "After all, I won!"},
+    {"character": "ashley", "mood": "inlove",          "text": "Then are you still my Andy?"},
+    {"character": "ashley", "mood": "no_way",             "text": "You suck..."},
+    {"character": "ashley", "mood": "unsatisfied", "text": "What am I supposed to do now?"},
+    {"character": "ashley", "mood": "provoking",        "text": "Aaaaaaandrew..."},
+    {"character": "ashley", "mood": "cute",             "text": "There there."},
+    {"character": "ashley", "mood": "giggles",          "text": "Andrew and Leyley and the Final Finale. Finally! The Happy Ever After Special!"},
+    {"character": "ashley", "mood": "sorry",          "text": "What? Are you still angry at me?"},
+    {"character": "ashley", "mood": "sad",       "text": "But you'll stay with me anyway, right?"},
+    {"character": "ashley", "mood": "satisfied",         "text": "Your secrets are safe with me."},
+    {"character": "ashley", "mood": "scolding",         "text": "Stop that."},
+    {"character": "ashley", "mood": "inlove",           "text": "I love you Andy."},
+    {"character": "ashley", "mood": "pout",            "text": "Welcome back, Andy."},
+    {"character": "ashley", "mood": "emotionally_hurt", "text": "You hate me, don't you?"},
+    {"character": "ashley", "mood": "sinister",         "text": "Brother.."},
+    {"character": "ashley", "mood": "sad",        "text": "Say it back to me."},
+    {"character": "ashley", "mood": "regrefully_thinking",       "text": "Are you mad at me?..."},
+    {"character": "ashley", "mood": "admitting",           "text": "Promise me you'll never leave."},
+    {"character": "ashley", "mood": "scolding",         "text": "You can't do this to me Andy!"},
+    {"character": "ashley", "mood": "sad",              "text": "...Somehow you feel very far away."},
+    {"character": "ashley", "mood": "worried",          "text": "Where are you going?"},
+    {"character": "ashley", "mood": "happy",          "text": "HAHA"},
+    {"character": "ashley", "mood": "are_u_serious",         "text": "Don't lie to me!"},
+    {"character": "ashley", "mood": "cute",             "text": "Can I eat your ice cream?"},
+    {"character": "ashley", "mood": "hmm",              "text": "What would you want, Andrew?"},
+    {"character": "ashley", "mood": "chuckle",          "text": "Thanks, Andy! You're my favorite lemon muffin!"},
+    {"character": "ashley", "mood": "speechless",       "text": "........."},
+    {"character": "ashley", "mood": "sad",         "text": "Be mine forever and ever and ever."},
+    {"character": "ashley", "mood": "emotionally_hurt",         "text": "Nothing is fun to you anymore..."},
+    {"character": "ashley", "mood": "furious",         "text": "Stop that."},
+    {"character": "ashley", "mood": "regrefully_thinking",           "text": "I love you Andy."},
+    {"character": "ashley", "mood": "sigh",              "text": "What would you want, Andrew?"},
+    {"character": "ashley", "mood": "embarrased",       "text": "........."},
+    {"character": "ashley", "mood": "shouting",          "text": "Stop poking him!"},
+    {"character": "ashley", "mood": "shouting",          "text": "Leave Andy alone!"},
+    {"character": "ashley", "mood": "shouting",          "text": "Don't you touch him!"},
+    {"character": "ashley", "mood": "shouting",          "text": "I said BACK OFF!"}
+  ],
+  "dialogues": [
+    {"sequence": [
+      {"character": "ashley", "mood": "indifferent", "text": "Who cares."},
+      {"character": "andrew", "mood": "explaining", "text": "Well, I for one."},
+      {"character": "ashley", "mood": "happy",    "text": "Then that makes a grand total of one person who cares."}
+    ]},
+    {"sequence": [
+      {"character": "andrew", "mood": "inlove", "text": "And thus, she forever keeps her mouth shut."},
+      {"character": "ashley", "mood": "happy", "text": ["Only as long as you keep your eyes closed!", "Let no hussie steal your gaze. It's just us now!"]}
+    ]}
+  ],
+  "drag_onto": [
+    {"dragged": "andrew", "sequence": [
+      {"character": "ashley", "mood": "hmm",  "text": "Well well. Look who crawled into my lap."},
+      {"character": "andrew", "mood": "awkward",   "text": "I— I tripped."},
+      {"character": "ashley", "mood": "giggles",     "text": "You're not going anywhere now, are you?"}
+    ]},
+    {"dragged": "ashley", "sequence": [
+      {"character": "andrew", "mood": "stop",    "text": "Ashley— what are you doing?"},
+      {"character": "ashley", "mood": "content",     "text": "Staying. You're stuck with me, Andy."},
+      {"character": "andrew", "mood": "shy",    "text": "...I know."}
+    ]}
+  ],
+  "scenes": [
+    {"sequence": [
+      {"character": "andrew", "mood": "anxious",      "text": ["...Don't leave.", "I dreamt you weren't here when I woke up."]},
+      {"character": "ashley", "mood": "regreful",      "text": "Andy. I'm right here."},
+      {"character": "andrew", "mood": "fake_calm",     "text": "Promise me. Promise you won't."},
+      {"character": "ashley", "mood": "worried",      "text": "I'm never letting you go. You know that."}
+    ]}
+  ],
+  "prophecy": [
+    {"sequence": [
+      {"character": "ashley", "mood": "sinister",     "text": "I saw it. In the dream. What happens next."},
+      {"character": "andrew", "mood": "scared",      "text": "...Do I want to know?"},
+      {"character": "ashley", "mood": "chuckle",         "text": "No. But you'll find out anyway."}
+    ]},
+    {"sequence": [
+      {"character": "andrew", "mood": "thinking",     "text": "Something's coming. I can feel it."},
+      {"character": "ashley", "mood": "hmm",          "text": "The demon showed me. It's already too late to stop it."}
+    ]},
+    {"sequence": [
+      {"character": "ashley", "mood": "regreful",     "text": "I dreamt of us. At the end of all of this."},
+      {"character": "andrew", "mood": "desperate",   "text": "And? ...Are we together?"},
+      {"character": "ashley", "mood": "sinister",    "text": "We're always together, Andy. That's the problem."}
+    ]}
+  ],
+
+  "_env_comment": "Environment-triggered lines. Spoken at first launch of the day (greetings/holidays) or when a condition changes (weather category, todo count). Moods must be slugs in expressions.MOODS with art. 'date' is MM-DD. Weather 'category' is rain/overcast/clear (from Open-Meteo WMO code).",
+
+  "greetings_morning": [
+    {"character": "andrew", "mood": "content",  "text": "Morning, Leyley."},
+    {"character": "andrew", "mood": "neutral",  "text": "...Another day."},
+    {"character": "ashley", "mood": "happy",    "text": "Morning, Andy. You're still here."},
+    {"character": "ashley", "mood": "giggles",  "text": "Up already? Good. I'd hate to start without you."}
+  ],
+  "greetings_evening": [
+    {"character": "andrew", "mood": "blue",      "text": "...It's late. Again."},
+    {"character": "andrew", "mood": "unhappy",  "text": "Night, Leyley."},
+    {"character": "ashley", "mood": "sad",      "text": "You came back. ...You always come back."},
+    {"character": "ashley", "mood": "regreful", "text": "Stay up with me a little longer, Andy."}
+  ],
+
+  "holidays": [
+    {"date": "12-25", "lines": [
+      {"character": "ashley", "mood": "giggles",  "text": "Merry Christmas, Andy. Just us. Like always."},
+      {"character": "andrew", "mood": "shy",      "text": "...Merry Christmas, Leyley."}
+    ]},
+    {"date": "10-31", "lines": [
+      {"character": "ashley", "mood": "sinister", "text": "Halloween. Our kind of night, isn't it, Andy?"},
+      {"character": "andrew", "mood": "nervous",   "text": "...Let's not."}
+    ]},
+    {"date": "02-14", "lines": [
+      {"character": "ashley", "mood": "inlove",   "text": "Valentine's. You're mine, Andy. You know that."},
+      {"character": "andrew", "mood": "inlove",   "text": "...I know."}
+    ]},
+    {"date": "01-01", "lines": [
+      {"character": "andrew", "mood": "thinking", "text": "New year. Same us."},
+      {"character": "ashley", "mood": "content",  "text": "Same us. That's the point, Andy."}
+    ]}
+  ],
+
+  "weather": [
+    {"category": "rain", "character": "ashley", "mood": "sad",        "text": "...It's raining."},
+    {"category": "rain", "character": "andrew", "mood": "blue",      "text": "Rain again. Fits, doesn't it."},
+    {"category": "rain", "character": "ashley", "mood": "regreful",  "text": "Stay in with me today, Andy."},
+    {"category": "overcast", "character": "andrew", "mood": "thinking",  "text": "...Grey out."},
+    {"category": "overcast", "character": "ashley", "mood": "hmm",       "text": "Quiet kind of day."},
+    {"category": "clear", "character": "ashley", "mood": "giggles",  "text": "Sun's out. ...Shame."},
+    {"category": "clear", "character": "andrew", "mood": "content",  "text": "...Clear sky for once."}
+  ],
+
+  "todo_reminders": [
+    {"sequence": [
+      {"character": "ashley", "mood": "scolding",   "text": "...You have work to do."},
+      {"character": "andrew", "mood": "indifferent", "text": "...Same."}
+    ]},
+    {"sequence": [
+      {"character": "ashley", "mood": "provoking",  "text": "Things on your list, Andy. Not mine. Yours."},
+      {"character": "andrew", "mood": "give_up",    "text": "...Later."}
+    ]}
+  ],
+  "late_night": [
+    {"character": "andrew", "mood": "unhappy", "text": "...Can't sleep either."},
+    {"character": "andrew", "mood": "worried", "text": "...It's late. Again."},
+    {"character": "ashley", "mood": "sinister", "text": "You should be sleeping, Andy. I'll watch for you."},
+    {"character": "ashley", "mood": "neutral", "text": "Stay up with me. ...You always stay up with me."},
+    {"character": "andrew", "mood": "desperate", "text": "...Another night I won't get back."},
+    {"character": "ashley", "mood": "chuckle", "text": "The dark suits us. Don't you think, Andy?"}
+  ],
+  "reunion": [
+    {"sequence": [
+      {"character": "ashley", "mood": "regreful", "text": "You were gone."},
+      {"character": "andrew", "mood": "awkward", "text": "...I'm here now."},
+      {"character": "ashley", "mood": "chuckle", "text": "You always come back."}
+    ]},
+    {"sequence": [
+      {"character": "andrew", "mood": "worried", "text": "...You're still here. Good."},
+      {"character": "ashley", "mood": "provoking", "text": "Did you think I'd leave? Andy, I don't leave."}
+    ]},
+    {"sequence": [
+      {"character": "ashley", "mood": "furious", "text": "Where were you?"},
+      {"character": "andrew", "mood": "indifferent", "text": "...Around."},
+      {"character": "ashley", "mood": "sinister", "text": "Around. I'll remember that."}
+    ]}
+  ],
+  "choices": [
+    {
+      "speaker": "ashley",
+      "question": "Andy... you'd never leave me, right?",
+      "options": [
+        {"text": "Never.", "codep": {"andrew": 5, "ashley": 5}, "response": {"character": "andrew", "mood": "inlove", "text": "...Never."}},
+        {"text": "...", "codep": {"andrew": -3, "ashley": -8}, "response": {"character": "ashley", "mood": "furious", "text": "That hesitation. I heard it."}}
+      ]
+    },
+    {
+      "speaker": "andrew",
+      "question": "Do you ever want to just... stop?",
+      "options": [
+        {"text": "Every day.", "codep": {"andrew": -5, "ashley": -5}, "response": {"character": "ashley", "mood": "crying", "text": "Don't say that. Not to me. Not ever."}},
+        {"text": "...Not yet.", "codep": {"andrew": 3, "ashley": 3}, "response": {"character": "ashley", "mood": "content", "text": "Good. Then we go on."}}
+      ]
+    },
+    {
+      "speaker": "ashley",
+      "question": "If someone tried to take me from you, what would you do?",
+      "options": [
+        {"text": "Let them try.", "codep": {"andrew": 8, "ashley": 8}, "response": {"character": "ashley", "mood": "sinister", "text": "That's my Andy."}},
+        {"text": "I don't know.", "codep": {"andrew": -5, "ashley": -3}, "response": {"character": "ashley", "mood": "provoking", "text": "You don't know? ...I'll teach you."}}
+      ]
+    }
+  ]
+}

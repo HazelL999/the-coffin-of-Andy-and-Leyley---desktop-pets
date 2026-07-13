@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Local IDE/agent config — not part of the project.
+.claude/
+
+# Local desktop shortcut (points at the author's own interpreter path).
+*.lnk
+
+# Runtime-generated user data (API keys, settings, cache, state).
+data/.ai_cache.json
+data/.env_state.json
+data/user_settings.json
+
+# Keep the asset folder structure (for the convention docs + .gitkeep), but
+# ignore the actual sprite binaries so artists keep their own art out of the
+# public repo by default. If you want to ship art in your fork, edit these.
+assets/**/*.png
+assets/**/*.gif
+assets/**/*.jpg
+assets/**/*.jpeg
+!assets/**/README.md
+!assets/**/.gitkeep
+
+# Raw sprite source art the author cropped from — large, not for the public
+# repo. Users supply their own art (see README).
+Andrew-sprites/
+Ashley-sprites/
+
+# User-supplied art folders (AI chat images, backpack items, vision images,
+# altar sprites, music). Users drop their own files here.
+AICHAT/
+backpack/
+vision/
+Altar/
+assets/music/*.mp3
+assets/music/*.ogg
+assets/music/*.wav

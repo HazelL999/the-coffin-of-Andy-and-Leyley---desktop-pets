@@ -1,0 +1,7 @@
+Pillow>=12.3
+# Background music playback (cross-platform). Optional — if not installed,
+# the app runs silently. pip install pygame
+pygame>=2.5
+# macOS only, optional: enables the "click-through" toggle. Without it the app
+# still runs (pets are grabbable by default). Ignored on Windows/Linux.
+pyobjc-core>=9.0; sys_platform == "darwin"

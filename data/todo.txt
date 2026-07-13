@@ -1,0 +1,9 @@
+# Andy & Leyley TODO list — one open item per line.
+# Lines starting with '#' are comments and are ignored. Blank lines are ignored.
+# When the number of open items (non-comment, non-blank lines) INCREASES,
+# Ashley will scold you and Andrew will shrug it off ("...Same.").
+# Removing/done-ing items is celebrated with silence — no nagging.
+#
+# Edit freely. Example items below (replace with your own):
+Finish the dialogue system docs
+Reply to that email
