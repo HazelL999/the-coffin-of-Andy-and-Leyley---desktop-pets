@@ -2,9 +2,11 @@
 width. Shown when the talisman is used from the backpack.
 
 The vision images live in the project's `vision/` directory (see
-config.VISION_DIR). They are wide (1000-2160px) transparent PNGs. The window
+config.VISION_DIR). They are wide (up to ~2880px) transparent RGBA PNGs,
+picked uniformly at random each time the talisman is used. The window
 scales to ~80% screen width, shows the image centered, and auto-closes after 5
-seconds (or on click).
+seconds (or on click). Drop new PNGs into `vision/` — they're picked up
+automatically on the next use, no code change needed.
 """
 
 import os
