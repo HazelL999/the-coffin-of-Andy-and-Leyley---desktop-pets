@@ -345,6 +345,9 @@ class PetApp:
         self._bond_win = None
         self._bond_line = None
         self._init_bond_window()
+        # Throttled topmost refresh: re-lift both pets every LIFT_INTERVAL_S so
+        # other topmost windows don't bury them. Skips a pet mid-drag.
+        self._last_lift = 0.0
         self._tick()
 
     def _build_control_panel(self, no_interaction):
@@ -522,6 +525,24 @@ class PetApp:
 
         # Bond line: faint red connection when mutual codependency is high.
         self._update_bond()
+
+        # Periodically re-assert topmost on both pets so other always-on-top
+        # windows (taskbar, our own panel/popups, other apps) can't bury them.
+        # Toggle off-then-on rather than a bare lift(): lift() only reorders
+        # within the topmost group, while toggling re-asserts the topmost flag
+        # and reliably pushes the window back above other topmost windows.
+        # Skip a pet that's being dragged right now (would yank it under the
+        # cursor).
+        if now - self._last_lift >= config.LIFT_INTERVAL_S:
+            self._last_lift = now
+            for pet in self.pets:
+                if pet._drag_data or not pet.win:
+                    continue
+                try:
+                    pet.win.attributes("-topmost", False)
+                    pet.win.attributes("-topmost", True)
+                except tk.TclError:
+                    pass
 
         self.root.after(config.FRAME_MS, self._tick)
 

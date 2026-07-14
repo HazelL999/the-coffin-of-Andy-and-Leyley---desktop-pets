@@ -64,6 +64,17 @@ TRANSITION_DELAY_MS = 400        # -1 shows this long before switching to -2 on 
 WALK_SPEED_PX_S = 30           # pixels per second (slowed: less frantic wandering)
 IDLE_PAUSE_RANGE = (2.0, 6.0)  # seconds the pet idles between wanders (longer = calmer)
 SCREEN_MARGIN = 20              # keep pets this far from screen edges
+# The two pets stay at least this far apart center-to-center when wandering,
+# so they don't pile on top of each other. Dragging bypasses wander, so the
+# user can still place them overlapping by hand. One body length (~128px) keeps
+# them a comfortable step apart; cling/chase scenes use _beside (same spacing)
+# so this never fights a scripted approach.
+MIN_PARTNER_DISTANCE = 128      # px — one body length; wander targets get nudged apart
+# Periodically re-lift both pet windows to the top of the Z order so other
+# topmost windows (taskbar, our own control panel / popups, other apps' always-
+# -on-top windows) don't bury a pet that drifted underneath. Throttled so it
+# doesn't flicker or fight an in-progress drag.
+LIFT_INTERVAL_S = 3.0           # seconds between topmost refreshes
 
 # --- Scheduler ---
 EVENT_INTERVAL_RANGE = (2.0, 6.0)   # seconds between random events per pet

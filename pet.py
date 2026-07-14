@@ -546,6 +546,21 @@ class Pet:
                 # bias away from Ashley
                 self.target_x = self.x + (self.x - px) * 0.5
                 self.target_y = self.y + (self.y - py) * 0.5
+        # Keep the two pets from piling on each other: if this wander target
+        # would land within MIN_PARTNER_DISTANCE of the partner, nudge it back
+        # out along the line between them. (Dragging sets x/y directly and
+        # never calls wander, so the user can still overlap them by hand.)
+        if self.partner_ref:
+            px, py = self.partner_ref.x, self.partner_ref.y
+            dx, dy = self.target_x - px, self.target_y - py
+            d = math.hypot(dx, dy)
+            if 0 < d < config.MIN_PARTNER_DISTANCE:
+                push = (config.MIN_PARTNER_DISTANCE - d) + 2
+                self.target_x += (dx / d) * push
+                self.target_y += (dy / d) * push
+            elif d == 0:
+                # Exactly on top of each other: push in a fixed direction.
+                self.target_x += config.MIN_PARTNER_DISTANCE
         self.state = self.STATE_WANDERING
 
     def _cancel_transition(self):
