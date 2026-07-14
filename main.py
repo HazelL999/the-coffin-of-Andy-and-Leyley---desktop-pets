@@ -610,8 +610,11 @@ class PetApp:
         ash.facing = "right" if andrew.x >= ash.x else "left"
         ash.state = Pet.STATE_WANDERING
         def snap():
-            line = ash.dialogue.random_line("ashley", mood="shouting", rng=ash.rng) \
-                or ash.dialogue.random_line("ashley", rng=ash.rng)
+            # Use the ashley_angers trigger pool: these lines ("Stop poking
+            # him!" etc.) only make sense in this event, so they're excluded
+            # from random idle dialogue and only surface here.
+            line = ash.dialogue.random_triggered("ashley", "ashley_angers",
+                                                  rng=ash.rng)
             if line:
                 ash.speak(line)
         ash.win.after(1500, snap)

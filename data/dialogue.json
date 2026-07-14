@@ -95,10 +95,10 @@
     {"character": "ashley", "mood": "regrefully_thinking",           "text": "I love you Andy."},
     {"character": "ashley", "mood": "sigh",              "text": "What would you want, Andrew?"},
     {"character": "ashley", "mood": "embarrased",       "text": "........."},
-    {"character": "ashley", "mood": "shouting",          "text": "Stop poking him!"},
-    {"character": "ashley", "mood": "shouting",          "text": "Leave Andy alone!"},
-    {"character": "ashley", "mood": "shouting",          "text": "Don't you touch him!"},
-    {"character": "ashley", "mood": "shouting",          "text": "I said BACK OFF!"}
+    {"character": "ashley", "mood": "shouting", "trigger": "ashley_angers", "text": "Stop poking him!"},
+    {"character": "ashley", "mood": "shouting", "trigger": "ashley_angers", "text": "Leave Andy alone!"},
+    {"character": "ashley", "mood": "shouting", "trigger": "ashley_angers", "text": "Don't you touch him!"},
+    {"character": "ashley", "mood": "shouting", "trigger": "ashley_angers", "text": "I said BACK OFF!"}
   ],
   "dialogues": [
     {"sequence": [

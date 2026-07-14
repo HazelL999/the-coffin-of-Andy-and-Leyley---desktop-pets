@@ -26,6 +26,12 @@ class DialogueLine:
     mood: str
     text: Union[str, List[str]]
     weight: float = 1.0
+    # Optional trigger tag: a line with a trigger is excluded from normal
+    # random_line() pools (idle / scene dialogue) and is only returned by
+    # random_triggered(). Use this for lines whose meaning only makes sense in
+    # a specific event (e.g. "Stop poking him!" only fits when the user has
+    # been clicking Andrew, not as a random idle line).
+    trigger: Optional[str] = None
 
     @property
     def is_multi(self) -> bool:
@@ -104,7 +110,8 @@ class DialogueStore:
                 weight = 1.0
             if weight <= 0:
                 weight = 1.0
-            line = DialogueLine(char, mood, text, weight)
+            trigger = entry.get("trigger")  # optional: gate to a specific event
+            line = DialogueLine(char, mood, text, weight, trigger)
             store._by_key.setdefault((char, mood), []).append(line)
             store._by_char.setdefault(char, []).append(line)
 
@@ -294,6 +301,24 @@ class DialogueStore:
             pool = self._by_char.get(character)
         if not pool:
             return None
+        # Exclude trigger-gated lines: their meaning only fits the event that
+        # gates them, so they must never surface as random idle/scene dialogue.
+        pool = [l for l in pool if not l.trigger]
+        if not pool:
+            return None
+        weights = [l.weight for l in pool]
+        return rng.choices(pool, weights=weights, k=1)[0]
+
+    def random_triggered(self, character: str, trigger: str,
+                         rng: Optional[random.Random] = None
+                         ) -> Optional[DialogueLine]:
+        """Pick a line gated to a specific event trigger (see the `trigger`
+        field on lines). Falls back to random_line() (ungated) if no line is
+        tagged with this trigger, so callers don't need to guard the result."""
+        rng = rng or random
+        pool = [l for l in self._by_char.get(character, []) if l.trigger == trigger]
+        if not pool:
+            return self.random_line(character, rng=rng)
         weights = [l.weight for l in pool]
         return rng.choices(pool, weights=weights, k=1)[0]
 
