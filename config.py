@@ -88,10 +88,10 @@ EVENT_WEIGHTS = {
 }
 DIALOGUE_COOLDOWN = 24.0       # min seconds between two lines from one pet (was 8.0)
 INTERACTION_COOLDOWN = 40.0    # min seconds between interaction sequences (was 60)
-INTERACTION_RANGE = (50.0, 150.0)  # when to schedule the next interaction (was 90-270).
-# Tighter interval raises the fraction of wall-clock the pets spend pressed
-# together (~4% -> ~7%), which is what lets codependency net-drift upward
-# toward 100 instead of plateauing mid-scale. See state.tick rates.
+INTERACTION_RANGE = (60.0, 180.0)  # when to schedule the next interaction.
+# Interval sized for ~6% pressed-together fraction of wall-clock (was 90-270
+# giving ~4%, then 50-150 giving ~7% which surfaced the red line too often;
+# 60-180 lands ~6%). See state.tick rates.
 CHASE_EVADE_PX = 40            # how far Ashley sidesteps when Andrew chases her
 
 # --- Distance emotion spectrum (Andy & Leyley: close=clingy/smothering,

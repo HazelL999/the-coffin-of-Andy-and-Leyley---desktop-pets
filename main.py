@@ -446,10 +446,14 @@ class PetApp:
                                bd=0, highlightthickness=0,
                                bg=config.TRANSPARENT_COLOR)
             canvas.pack()
-            # The line lives under the sprites (its window is topmost too, but
-            # we keep it just-less-than-topmost so pets render above it).
+            # The line must sit ABOVE normal app windows (so it isn't covered
+            # when a browser/folder is on screen) but BELOW the pets (so the
+            # sprites render over the line, not under it). We make this window
+            # topmost too, and rely on the periodic lift in _tick — which lifts
+            # the bond window FIRST and the pets AFTER — so the pets stay above
+            # the line within the topmost group.
             try:
-                win.attributes("-topmost", False)
+                win.attributes("-topmost", True)
             except tk.TclError:
                 pass
             self._bond_win = win
@@ -544,6 +548,14 @@ class PetApp:
         # cursor).
         if now - self._last_lift >= config.LIFT_INTERVAL_S:
             self._last_lift = now
+            # Lift the bond window FIRST so the pets (lifted after) stay above
+            # the line, but both end up above normal app windows.
+            if self._bond_win:
+                try:
+                    self._bond_win.attributes("-topmost", False)
+                    self._bond_win.attributes("-topmost", True)
+                except tk.TclError:
+                    pass
             for pet in self.pets:
                 if pet._drag_data or not pet.win:
                     continue

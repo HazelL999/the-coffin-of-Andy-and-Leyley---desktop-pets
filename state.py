@@ -84,27 +84,25 @@ class CodependencyState:
         """Apply proximity drift to both characters. Called every tick by
         PetApp with the current inter-pet distance band.
 
-        Tuned as a slow upward integrator: closeness accumulates the bond,
-        separation barely bleeds it, so the value creeps up over hours/days
-        toward 100 (the red bond line) rather than plateauing mid-scale.
-        The pets are only pressed together briefly each interaction (the real-
-        time push-apart keeps them ~1 body length apart at rest, so very_near
-        is a small slice of wall-clock time), so the raise rate has to outpace
-        the drain from the much larger time spent wandering apart. Per-second
-        rates (multiplied by dt):
-          very_near: both +0.3   (pressed close → bond builds fast)
-          close:     both -0.01  (apart → barely cools)
-          far:       both -0.02  (apart → slow cool)
-          very_far:  both -0.04  (abandoned → slow bleed)
-        Net is slightly positive over a day given the interaction cadence,
-        so the red line surfaces every few days. Discrete events (drag-onto
-        +5, sacrifice -0.7, poke) layer on top.
+        Tuned (2026-07-14 round 3) so the red bond line surfaces every few
+        days, not multiple times a day. The prior round (+0.3/-0.01/-0.02/
+        -0.04 with 7% near-fraction) drifted up too fast. Now: closeness
+        builds the bond at a moderate rate; separation cools it back toward
+        the same speeds as the original rebalance, so the value oscillates
+        up over days instead of rocketing. Per-second rates (x dt):
+          very_near: both +0.2   (pressed close -> bond builds)
+          close:     both -0.05 (apart -> slowly cools)
+          far:       both -0.15 (apart -> cooling faster)
+          very_far:  both -0.3  (abandoned -> bleeds)
+        With ~6% near-fraction and the discrete bonuses (choice +5, scripted
+        +1, drag-onto +5) the net is slowly positive over a day -> red line
+        every few days.
         """
         rates = {
-            "very_near": (+0.3, +0.3),
-            "close":     (-0.01, -0.01),
-            "far":       (-0.02, -0.02),
-            "very_far":  (-0.04, -0.04),
+            "very_near": (+0.2, +0.2),
+            "close":     (-0.05, -0.05),
+            "far":       (-0.15, -0.15),
+            "very_far":  (-0.3, -0.3),
         }
         da, ds = rates.get(distance_band, (0.0, 0.0))
         if da:
