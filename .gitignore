@@ -26,6 +26,12 @@ assets/**/*.jpeg
 !assets/**/README.md
 !assets/**/.gitkeep
 
+# Ship the two characters' finished sprite art (128px game-ready PNGs) so a
+# fresh clone runs out of the box — without these every mood falls back to the
+# magenta placeholder. The raw cropped source art stays excluded below.
+!assets/andrew/**/*.png
+!assets/ashley/**/*.png
+
 # Raw sprite source art the author cropped from — large, not for the public
 # repo. Users supply their own art (see README).
 Andrew-sprites/
