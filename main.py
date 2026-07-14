@@ -148,6 +148,10 @@ class InteractionDirector:
         if not beats or not beats[0].character:
             self.active = False
             return
+        # A scripted exchange playing out nudges both pets' bond up a touch.
+        if self.codep:
+            self.codep.adjust("andrew", config.CODEP_SCRIPTED_BONUS)
+            self.codep.adjust("ashley", config.CODEP_SCRIPTED_BONUS)
         first = self._pet(beats[0].character)
         other = self._pet(beats[1].character) if len(beats) > 1 else None
         if not first or not first.win:
@@ -253,6 +257,11 @@ class InteractionDirector:
             if self.codep:
                 for char_name, delta in opt.get("codep", {}).items():
                     self.codep.adjust(char_name, delta)
+                # Flat bonus for engaging at all: the player choosing to
+                # interact nudges both pets' mutual bond up regardless of which
+                # reply was picked. Layers on top of the per-option delta.
+                self.codep.adjust("andrew", config.CODEP_CHOICE_BONUS)
+                self.codep.adjust("ashley", config.CODEP_CHOICE_BONUS)
             # Speak the response line (if the option has one).
             resp = opt.get("response")
             if resp and isinstance(resp, dict):

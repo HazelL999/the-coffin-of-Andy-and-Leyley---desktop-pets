@@ -84,22 +84,27 @@ class CodependencyState:
         """Apply proximity drift to both characters. Called every tick by
         PetApp with the current inter-pet distance band.
 
-        Closeness raises codependency; separation lowers it, faster the
-        farther apart they are — so the value can't just pin at 100 once it
-        gets there: pull them apart and it drains. Per-second rates (multiplied
-        by dt):
-          very_near: both +0.1   (pressed close → bond)
-          close:     both -0.05  (drifting apart → slowly cools)
-          far:       both -0.15  (apart → cooling faster)
-          very_far:  both -0.3   (abandoned → bleeds fast)
-        Net: sustained closeness ~+0.1/s, sustained distance up to -0.3/s;
-        from 100, pulling them to far takes ~100s to shed 15.
+        Tuned as a slow upward integrator: closeness accumulates the bond,
+        separation barely bleeds it, so the value creeps up over hours/days
+        toward 100 (the red bond line) rather than plateauing mid-scale.
+        The pets are only pressed together briefly each interaction (the real-
+        time push-apart keeps them ~1 body length apart at rest, so very_near
+        is a small slice of wall-clock time), so the raise rate has to outpace
+        the drain from the much larger time spent wandering apart. Per-second
+        rates (multiplied by dt):
+          very_near: both +0.3   (pressed close → bond builds fast)
+          close:     both -0.01  (apart → barely cools)
+          far:       both -0.02  (apart → slow cool)
+          very_far:  both -0.04  (abandoned → slow bleed)
+        Net is slightly positive over a day given the interaction cadence,
+        so the red line surfaces every few days. Discrete events (drag-onto
+        +5, sacrifice -0.7, poke) layer on top.
         """
         rates = {
-            "very_near": (+0.1, +0.1),
-            "close":     (-0.05, -0.05),
-            "far":       (-0.15, -0.15),
-            "very_far":  (-0.3, -0.3),
+            "very_near": (+0.3, +0.3),
+            "close":     (-0.01, -0.01),
+            "far":       (-0.02, -0.02),
+            "very_far":  (-0.04, -0.04),
         }
         da, ds = rates.get(distance_band, (0.0, 0.0))
         if da:

@@ -87,8 +87,11 @@ EVENT_WEIGHTS = {
     # INTERACTION_RANGE / INTERACTION_COOLDOWN), not by the per-pet scheduler.
 }
 DIALOGUE_COOLDOWN = 24.0       # min seconds between two lines from one pet (was 8.0)
-INTERACTION_COOLDOWN = 60.0    # min seconds between interaction sequences
-INTERACTION_RANGE = (90.0, 270.0)  # when to schedule the next interaction (was 30-90)
+INTERACTION_COOLDOWN = 40.0    # min seconds between interaction sequences (was 60)
+INTERACTION_RANGE = (50.0, 150.0)  # when to schedule the next interaction (was 90-270).
+# Tighter interval raises the fraction of wall-clock the pets spend pressed
+# together (~4% -> ~7%), which is what lets codependency net-drift upward
+# toward 100 instead of plateauing mid-scale. See state.tick rates.
 CHASE_EVADE_PX = 40            # how far Ashley sidesteps when Andrew chases her
 
 # --- Distance emotion spectrum (Andy & Leyley: close=clingy/smothering,
@@ -127,6 +130,8 @@ CLICK_DRAG_PX = 5              # move less than this = a click, not a drag
 CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked
 CODEP_CLICK_ANDREW_DELTA = 2.0    # Andrew nudged up (attention)
 CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
+CODEP_CHOICE_BONUS = 5.0          # both rise on any choice-dialog reply (engaging bonds them)
+CODEP_SCRIPTED_BONUS = 1.0        # both rise on a random scripted scene firing
 
 # --- Bond line (visualizes peak mutual codependency) ---
 # The faint red line appears when BOTH pets' codependency is at or above
