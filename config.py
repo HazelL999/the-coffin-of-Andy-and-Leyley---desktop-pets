@@ -108,12 +108,18 @@ CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
 ANDY_SLEEP_MOOD = "content"    # mood shown while Andy sleeps (no dedicated art)
 
 # --- Bond line (visualizes peak mutual codependency) ---
-# The faint red line appears ONLY when BOTH pets' codependency is maxed at
-# 100 — the fully-formed, mutual bond. It's a peak state, meant to be rare
-# and earned (the two have to drift all the way to the top together), not a
+# The faint red line appears when BOTH pets' codependency is at or above
+# BOND_THRESHOLD — the fully-formed, mutual bond. It's a peak state, meant to
+# be rare and earned (the two have to drift all the way up together), not a
 # gradient you watch fill in. Faint by design: a thin, stippled, soft-red
 # line so it reads as an ambient connection, not a bright cable.
-BOND_THRESHOLD = 100.0
+#
+# Set just under 100 (99.5) rather than exactly 100.0: codependency drifts in
+# 0.1/s steps and the Check-state UI shows {v:.0f} (rounded to a whole number),
+# so a value like 99.6 displays as "100" while the raw float is still < 100.0.
+# At 100.0 the line would flicker off whenever the weaker pet sits at 99.x —
+# matching what the UI calls "maxed" to what the line calls "formed".
+BOND_THRESHOLD = 99.5
 
 # --- Altar (sacrifice to the demon for prophecy) ---
 ALTAR_SIZE = 200               # px — square altar window

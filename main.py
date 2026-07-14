@@ -450,8 +450,9 @@ class PetApp:
 
     def _update_bond(self):
         """Refresh the bond line each tick. It appears ONLY when both pets'
-        codependency is maxed at 100 — a single, fixed-faintness red line
-        between them. No gradient: the bond is either formed or not."""
+        codependency reaches BOND_THRESHOLD (99.5 — see config) — a single,
+        fixed-faintness red line between them. No gradient: the bond is
+        either formed or not."""
         if not self._bond_win or len(self.pets) < 2:
             return
         a, b = self.pets[0], self.pets[1]
