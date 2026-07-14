@@ -8,6 +8,7 @@ bounding box stays tight to the sprite.
 import math
 import random
 import time
+from datetime import datetime
 
 import tkinter as tk
 
@@ -117,7 +118,14 @@ class Pet:
         # sprite. The sprite sits centered horizontally at the bottom; the bubble
         # is drawn in the top band on the same Canvas so nothing is clipped.
         self.win_w = max(size, config.BUBBLE_MAX_WIDTH + 16)
-        self.bubble_band = 60  # tight band: bubble hugs the sprite's head
+        # Head room for the speech bubble. Tall enough to hold a 5-line bubble
+        # (~70px text + padding + tail) without the box getting clamped short
+        # and letting text spill past the box onto the transparent canvas
+        # (which turns the spillover's anti-aliased edges purple — they mix
+        # with the magenta transparent-color). The bubble still hugs the
+        # sprite's head via the by1 clamp in _show_bubble; this just reserves
+        # the vertical space above it.
+        self.bubble_band = 110
         win_h = size + self.bubble_band
         self.win_h = win_h
         self.win.geometry(f"{self.win_w}x{win_h}")
@@ -335,35 +343,68 @@ class Pet:
                 if abs(dx) > 1:
                     self.facing = "right" if dx > 0 else "left"
         else:  # IDLE
-            # Andy pressed to Ashley won't wander off — he settles to sleep.
-            settling = (self.character == "andrew" and self._pressed_to_partner())
+            # When a character is in its sleep-trigger state it settles in place
+            # instead of wandering off, so it can accumulate toward sleep.
+            # Andy needs to be pressed to Ashley; Ashley just needs to be in her
+            # bedtime window. (Outside bedtime neither settles.)
+            settling = self._in_sleep_window() and (
+                self._pressed_to_partner()
+                if self.character == "andrew"
+                else not config.ASHLEY_NEEDS_PARTNER_TO_SLEEP)
             if not settling:
                 self.idle_timer -= dt
-            self._update_sleep(dt)  # accumulate idle-toward-sleep (Andy only)
+            self._update_sleep(dt)  # accumulate idle-toward-sleep (time-gated)
             if self.idle_timer <= 0 and not settling:
                 self.wander()
         self._clamp_position(size)
         self._move_window()
 
     def _update_sleep(self, dt):
-        """Andy-only: accumulate idle time while pressed to Ashley; fall asleep
-        past the threshold. Other characters never sleep."""
-        if self.character != "andrew":
+        """Per-character sleep, gated by wall-clock window (see config):
+          Andy   22-08:  pressed to Ashley + idle -> sleeps.
+          Ashley 00-10:  merely idle -> sleeps.
+        Outside the window the accumulator resets and they never sleep. A
+        sleeping pet wakes when its wake condition trips (Andy: Ashley moves
+        away; both: poked / spoken to)."""
+        if not self._in_sleep_window():
+            # Out of bedtime for this character: no accumulating, and wake if
+            # somehow still asleep (e.g. window just ended).
+            self._sleep_idle = 0.0
+            if self.state == self.STATE_SLEEPING:
+                self._wake_up()
             return
         if self.state == self.STATE_SLEEPING:
-            # Wake if Ashley moved away.
-            if not self._pressed_to_partner():
+            # Maintain sleep. Andy wakes if Ashley moved away; Ashley sleeps
+            # on her own so distance doesn't wake her.
+            if self.character == "andrew" and not self._pressed_to_partner():
                 self._wake_up()
             return
         if self.state != self.STATE_IDLE:
             self._sleep_idle = 0.0
             return
-        if self._pressed_to_partner():
+        # Accumulate toward sleep only when the character's trigger is met.
+        needs_partner = (self.character != "ashley"
+                         or config.ASHLEY_NEEDS_PARTNER_TO_SLEEP)
+        triggered = self._pressed_to_partner() if needs_partner else True
+        if triggered:
             self._sleep_idle += dt
             if self._sleep_idle >= config.SLEEP_IDLE_THRESHOLD:
                 self._fall_asleep()
         else:
             self._sleep_idle = 0.0
+
+    def _in_sleep_window(self):
+        """True if the current wall-clock hour is inside this character's
+        sleep window. Windows may cross midnight (start >= end, e.g. 22-08
+        means 22:00-08:00); a same-day window (start < end, e.g. 0-10) is a
+        plain range."""
+        hours = (config.ANDREW_SLEEP_HOURS if self.character == "andrew"
+                 else config.ASHLEY_SLEEP_HOURS)
+        start, end = hours
+        h = datetime.now().hour
+        if start < end:
+            return start <= h < end      # same-day window, e.g. 00:00-10:00
+        return h >= start or h < end     # crosses midnight, e.g. 22:00-08:00
 
     def _pressed_to_partner(self):
         if not self.partner_ref:
@@ -372,7 +413,9 @@ class Pet:
 
     def _fall_asleep(self):
         self.state = self.STATE_SLEEPING
-        self.set_mood(config.ANDY_SLEEP_MOOD)
+        mood = (config.ANDY_SLEEP_MOOD if self.character == "andrew"
+                else config.ASHLEY_SLEEP_MOOD)
+        self.set_mood(mood)
         self._draw_zzz()
 
     def _wake_up(self):

@@ -97,15 +97,25 @@ DISTANCE_BAND_COOLDOWN_SCALE = {  # multiply DIALOGUE_COOLDOWN by band
 DRAG_ONTO_DIST = 128 * 0.6      # overlap threshold for drag-onto-partner
 
 # --- Codependency / sleep / click-reaction ---
-SLEEP_IDLE_THRESHOLD = 15.0    # seconds idle (and pressed to Ashley) before Andy sleeps
+# Sleep is gated by wall-clock time (a real day/night rhythm), not just
+# proximity. Each character has a sleep window (hours, 0-23) during which they
+# CAN fall asleep; outside it they never accumulate sleep. Windows cross
+# midnight, so membership is `hour >= start or hour < end`.
+#   Andy:   22:00-08:00  — falls asleep when pressed to Ashley (very_near) + idle.
+#   Ashley: 00:00-10:00  — falls asleep when merely idle (doesn't need Andy).
+SLEEP_IDLE_THRESHOLD = 15.0    # seconds of qualifying idle before sleep
 SLEEP_DIST_BAND = "very_near"  # Andy only sleeps when this close to Ashley
+ANDREW_SLEEP_HOURS = (22, 8)   # Andy sleep window (start, end_exclusive), crosses midnight
+ASHLEY_SLEEP_HOURS = (0, 10)   # Ashley sleep window (start, end_exclusive)
+ASHLEY_NEEDS_PARTNER_TO_SLEEP = False  # Ashley sleeps on her own when idle; Andy needs her near
+ANDY_SLEEP_MOOD = "content"    # mood shown while Andy sleeps (no dedicated art)
+ASHLEY_SLEEP_MOOD = "content"  # mood shown while Ashley sleeps (no dedicated art yet)
 CLICK_WINDOW_S = 3.0           # multi-click window for "Andrew poked N times"
 CLICK_RAGE_THRESHOLD = 3       # clicks within window that angers Ashley
 CLICK_DRAG_PX = 5              # move less than this = a click, not a drag
 CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked
 CODEP_CLICK_ANDREW_DELTA = 2.0    # Andrew nudged up (attention)
 CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
-ANDY_SLEEP_MOOD = "content"    # mood shown while Andy sleeps (no dedicated art)
 
 # --- Bond line (visualizes peak mutual codependency) ---
 # The faint red line appears when BOTH pets' codependency is at or above
