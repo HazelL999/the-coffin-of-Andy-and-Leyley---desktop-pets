@@ -75,9 +75,14 @@ def build_messages(character, user_msg=None):
     """Assemble OpenRouter chat messages: system=persona, user=trigger or input."""
     persona = _PERSONA_SYSTEM.get(character, _PERSONA_SYSTEM["andrew"])
     if user_msg and user_msg.strip():
-        # The user is talking to the pet; answer in character.
-        content = (f"The user says to you: {user_msg.strip()}\n"
-                   f"Reply in character, addressing them (or Andy) as fits.")
+        # Make it unambiguous who is speaking and who is being addressed: the
+        # USER (a player, NOT the other sibling) is talking to this character,
+        # and this character replies to the user. Without this, Ashley's persona
+        # (which revolves around Andy) can misread the user as Andy, and the
+        # pair-confusion bug (asking Andy, getting Ashley) is worse.
+        content = (f"A player (NOT your sibling) says to you: {user_msg.strip()}\n"
+                   f"Reply to the player in character. If you reference your "
+                   f"sibling, use their name — do not mistake the player for them.")
     else:
         # No input: just say something on your mind right now.
         content = "Say one line that's on your mind right now, in character."

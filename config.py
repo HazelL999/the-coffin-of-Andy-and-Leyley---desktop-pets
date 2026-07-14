@@ -153,11 +153,17 @@ REUNION_THRESHOLD_HOURS = 12
 # Requires the user's own OpenRouter API key (free :models have a daily cap).
 # With no key / on failure, falls back to local random dialogue — the app runs
 # identically with or without this configured. Pure stdlib (urllib), no deps.
-AI_MODEL_DEFAULT = "google/gemma-4-31b-it:free"  # OpenRouter free model (probed working)
-AI_MODEL_FALLBACKS = [             # tried in order on 429/rate-limit; free models
-    "openai/gpt-oss-120b:free",    # rotate as upstream providers throttle
-    "google/gemma-4-26b-a4b-it:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+AI_MODEL_DEFAULT = "google/gemma-4-26b-a4b-it:free"  # probed working 2026-07-13
+# Tried in order on 429/rate-limit/404 (free models get throttled upstream, and
+# a given :free variant can 404 if its provider route is broken even when the
+# model is listed as "alive"). Order = models we've actually seen succeed first,
+# then the rest as rotation. Note: free OpenRouter keys also hit a 402
+# "spend limit exceeded" on some models once the key's free quota is tapped —
+# those count as failures too and trigger the next fallback.
+AI_MODEL_FALLBACKS = [
+    "google/gemma-4-31b-it:free",      # alive but provider route sometimes 404s
+    "openai/gpt-oss-120b:free",        # often 429 (shared pool throttled)
+    "meta-llama/llama-3.3-70b-instruct:free",  # can 402 once key quota tapped
 ]
 AI_TIMEOUT_S = 12.0          # LLM inference is slower than weather; give it room
 AI_MAX_TOKENS = 80           # keep lines short (saves free-tier quota)

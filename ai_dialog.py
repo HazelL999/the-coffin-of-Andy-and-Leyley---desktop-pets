@@ -264,7 +264,12 @@ def open_ai_dialog(root, pet, director=None):
     btn_ashley.place(anchor="center", relx=0.30, rely=0.5)
 
     # --- chat input bar (bottom) ---
-    disp = config.CHARACTER_META.get(pet.character, {}).get("display", pet.character)
+    # disp is the name shown in the status bar. It must reflect the character
+    # actually being talked to (selected), not pet.character (the pet the dialog
+    # was opened from) — opening AI chat from Ashley then selecting "Talk to
+    # Andrew" should show "Andrew said: ...", not "Ashley said: ...".
+    def _disp_for(c):
+        return config.CHARACTER_META.get(c, {}).get("display", c)
 
     def _set_status(text):
         status.config(text=text)
@@ -289,7 +294,7 @@ def open_ai_dialog(root, pet, director=None):
         _set_status("Generating…")
 
         def worker():
-            line, mood, cached = ai_chat.fetch_ai_line(pet.character, user_msg)
+            line, mood, cached = ai_chat.fetch_ai_line(char, user_msg)
 
             def done():
                 busy["on"] = False
@@ -297,9 +302,9 @@ def open_ai_dialog(root, pet, director=None):
                 if line:
                     _set_sprite_mood(char, mood)
                     _show_bubble(line)
-                    _set_status(f"{disp} said:{(' (cached)' if cached else '')}  {line}")
+                    _set_status(f"{_disp_for(char)} said:{(' (cached)' if cached else '')}  {line}")
                 else:
-                    loc = pet.dialogue.random_line(pet.character, rng=pet.rng)
+                    loc = pet.dialogue.random_line(char, rng=pet.rng)
                     if loc:
                         _set_sprite_mood(char, loc.mood)
                         _show_bubble(loc.text)
