@@ -6,6 +6,7 @@ each other.
 import math
 import random
 import time
+import json
 
 import tkinter as tk
 
@@ -309,9 +310,10 @@ class PetApp:
 
         # The altar window (summoned on demand, dismissed when done).
         self.altar = None
-        # Backpack & talisman charges (sacrifice +1, use -1).
+        # Backpack & talisman charges (sacrifice +1, use -1). Persisted across
+        # restarts in the env-state file so a sacrifice isn't lost on quit.
         self.backpack = None
-        self.talisman_charges = 0
+        self.talisman_charges = self._load_talisman_charges()
 
         # Preload all moods so dropping art in mid-run still works (lazy cache).
         for char in config.CHARACTERS:
@@ -654,6 +656,7 @@ class PetApp:
         if self.talisman_charges <= 0:
             return
         self.talisman_charges -= 1
+        self._save_talisman_charges()
         if self.backpack:
             self.backpack.update_talisman_count(self.talisman_charges)
         # Codependency: Andy gets a random +0.2 or -0.1, Ashley +0.1.
@@ -710,8 +713,32 @@ class PetApp:
     def _on_sacrifice_done(self):
         """The sacrifice animation finished — grant one talisman charge."""
         self.talisman_charges += 1
+        self._save_talisman_charges()
         if self.backpack:
             self.backpack.update_talisman_count(self.talisman_charges)
+
+    def _load_talisman_charges(self):
+        """Read the persisted talisman count from the env-state file so a
+        sacrifice survives a quit/restart. Defaults to 0 on any failure."""
+        try:
+            from env_context import EnvContext
+            n = EnvContext._load_state().get("talisman_charges", 0)
+            return int(n) if n else 0
+        except Exception:
+            return 0
+
+    def _save_talisman_charges(self):
+        """Merge the current talisman count into the env-state file (preserves
+        the other keys like last_greet_date / last_active_timestamp). Silent
+        on failure — the count is cosmetic, not worth crashing over."""
+        try:
+            from env_context import EnvContext
+            data = EnvContext._load_state()
+            data["talisman_charges"] = int(self.talisman_charges)
+            with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
 
     @staticmethod
     def _distance_band(dist):
