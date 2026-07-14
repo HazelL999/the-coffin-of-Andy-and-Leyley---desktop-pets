@@ -81,14 +81,28 @@ class CodependencyState:
         return ("stable", "❤")
 
     def tick(self, dt, distance_band):
-        """Apply slow drift from proximity. Called every tick by PetApp with
-        the current inter-pet distance band."""
-        if distance_band == "very_near":
-            # Pressed close: both grow more codependent.
-            self.adjust("andrew", +1.0 * dt)
-            self.adjust("ashley", +1.0 * dt)
-        elif distance_band == "very_far":
-            # Abandoned: Andy clings harder, Ashley spirals.
-            self.adjust("andrew", +0.8 * dt)
-            self.adjust("ashley", -0.8 * dt)
-        # close / far: no drift
+        """Apply proximity drift to both characters. Called every tick by
+        PetApp with the current inter-pet distance band.
+
+        Closeness raises codependency; separation lowers it, faster the
+        farther apart they are — so the value can't just pin at 100 once it
+        gets there: pull them apart and it drains. Per-second rates (multiplied
+        by dt):
+          very_near: both +0.1   (pressed close → bond)
+          close:     both -0.05  (drifting apart → slowly cools)
+          far:       both -0.15  (apart → cooling faster)
+          very_far:  both -0.3   (abandoned → bleeds fast)
+        Net: sustained closeness ~+0.1/s, sustained distance up to -0.3/s;
+        from 100, pulling them to far takes ~100s to shed 15.
+        """
+        rates = {
+            "very_near": (+0.1, +0.1),
+            "close":     (-0.05, -0.05),
+            "far":       (-0.15, -0.15),
+            "very_far":  (-0.3, -0.3),
+        }
+        da, ds = rates.get(distance_band, (0.0, 0.0))
+        if da:
+            self.adjust("andrew", da * dt)
+        if ds:
+            self.adjust("ashley", ds * dt)

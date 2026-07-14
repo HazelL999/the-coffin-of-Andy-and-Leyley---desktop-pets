@@ -104,7 +104,7 @@ CLICK_RAGE_THRESHOLD = 3       # clicks within window that angers Ashley
 CLICK_DRAG_PX = 5              # move less than this = a click, not a drag
 CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked
 CODEP_CLICK_ANDREW_DELTA = 2.0    # Andrew nudged up (attention)
-CODEP_DRAG_ONTO_DELTA = 10.0      # both rise when one is dragged onto the other
+CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
 ANDY_SLEEP_MOOD = "content"    # mood shown while Andy sleeps (no dedicated art)
 
 # --- Bond line (visualizes peak mutual codependency) ---

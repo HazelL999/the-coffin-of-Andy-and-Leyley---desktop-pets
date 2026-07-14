@@ -735,9 +735,11 @@ class PetApp:
         band = self._distance_band(dist)
         a.set_distance_band(band)
         b.set_distance_band(band)
-        # Codependency drift from being close / far apart (per-second rates;
-        # dt clamped by FRAME_MS so it's small per tick).
-        if self.codep and band in ("very_near", "very_far"):
+        # Codependency drift from proximity — runs in every band now
+        # (close/far/very_far all drain it; very_near raises it). Per-second
+        # rates live in CodependencyState.tick; dt clamped by FRAME_MS so
+        # it's small per tick.
+        if self.codep:
             self.codep.tick(config.FRAME_MS / 1000.0, band)
 
     def quit(self):
