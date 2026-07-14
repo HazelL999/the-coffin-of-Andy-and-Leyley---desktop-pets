@@ -602,8 +602,10 @@ class PetApp:
         self.director._play_beats(seq, dragged)
 
     def _on_poked(self, pet):
-        """A pet was clicked. Andrew poked rapidly -> Ashley angers."""
-        if pet.character != "andrew" or not pet.partner_ref:
+        """A pet was clicked rapidly. The NON-poked partner reacts:
+        poke Andrew -> Ashley angers; poke Ashley -> Andrew worries.
+        Both share the same multi-click counting + window logic."""
+        if not pet.partner_ref:
             return
         pet._click_count += 1
         # Reset the counter after the click window.
@@ -614,11 +616,17 @@ class PetApp:
                 pass
         pet._click_reset_after_id = pet.win.after(
             int(config.CLICK_WINDOW_S * 1000), lambda: setattr(pet, "_click_count", 0))
-        # Andrew gets a little attention bump.
-        self.codep.adjust("andrew", config.CODEP_CLICK_ANDREW_DELTA)
+        # Andrew poked: nudge his codependency each poke (attention). Ashley
+        # poked: no per-poke nudge — the adjustment happens once on the
+        # _andrew_worried trigger (Andy +5, Ashley -2), see below.
+        if pet.character == "andrew":
+            self.codep.adjust("andrew", config.CODEP_CLICK_ANDREW_DELTA)
         if pet._click_count >= config.CLICK_RAGE_THRESHOLD:
             pet._click_count = 0
-            self._ashley_angers(pet)
+            if pet.character == "andrew":
+                self._ashley_angers(pet)
+            else:
+                self._andrew_worried(pet)
 
     def _ashley_angers(self, andrew):
         """Ashley reacts angrily to Andrew being poked repeatedly."""
@@ -639,6 +647,33 @@ class PetApp:
             if line:
                 ash.speak(line)
         ash.win.after(1500, snap)
+
+    def _andrew_worried(self, ashley):
+        """Andrew reacts (worried/possessive) to Ashley being poked repeatedly.
+        Mirrors _ashley_angers but for the reverse direction: the partner who
+        was NOT poked walks over and speaks from the andrew_worried pool."""
+        andrew = ashley.partner_ref
+        if not andrew or not andrew.win:
+            return
+        # Trigger-time adjustment: poking Ashley to the rage threshold makes
+        # Andrew cling harder (+5) and Ashley recoil a touch (-2). Only fires
+        # once on the threshold, not each poke.
+        self.codep.adjust("andrew", config.CODEP_POKE_ASHLEY_ANDREW)
+        self.codep.adjust("ashley", config.CODEP_POKE_ASHLEY_ASHLEY)
+        # Andrew walks over to Ashley and freaks out.
+        andrew.target_x, andrew.target_y = self.director._beside(andrew, ashley)
+        andrew.facing = "right" if ashley.x >= andrew.x else "left"
+        andrew.state = Pet.STATE_WANDERING
+
+        def freak_out():
+            # Use the andrew_worried trigger pool: these lines ("She's mine."
+            # etc.) only make sense in this event, so they're excluded from
+            # random idle dialogue and only surface here.
+            line = andrew.dialogue.random_triggered("andrew", "andrew_worried",
+                                                    rng=andrew.rng)
+            if line:
+                andrew.speak(line)
+        andrew.win.after(1500, freak_out)
 
     def check_state(self, pet):
         """Pop a small window showing ONE pet's codependency / mental state

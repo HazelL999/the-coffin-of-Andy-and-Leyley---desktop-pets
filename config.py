@@ -127,8 +127,10 @@ ASHLEY_SLEEP_MOOD = "content"  # mood shown while Ashley sleeps (no dedicated ar
 CLICK_WINDOW_S = 3.0           # multi-click window for "Andrew poked N times"
 CLICK_RAGE_THRESHOLD = 3       # clicks within window that angers Ashley
 CLICK_DRAG_PX = 5              # move less than this = a click, not a drag
-CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked
-CODEP_CLICK_ANDREW_DELTA = 2.0    # Andrew nudged up (attention)
+CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked (trigger)
+CODEP_CLICK_ANDREW_DELTA = 2.0    # Andrew nudged up each poke (attention)
+CODEP_POKE_ASHLEY_ANDREW = 5.0    # Andrew rises when Ashley is poked to rage-threshold
+CODEP_POKE_ASHLEY_ASHLEY = -2.0   # Ashley drops when she herself is poked to rage-threshold
 CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
 CODEP_CHOICE_BONUS = 5.0          # both rise on any choice-dialog reply (engaging bonds them)
 CODEP_SCRIPTED_BONUS = 1.0        # both rise on a random scripted scene firing

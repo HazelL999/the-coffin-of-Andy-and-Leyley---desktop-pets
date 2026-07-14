@@ -47,9 +47,8 @@
     {"character": "andrew", "mood": "give_up",     "text": "I've been yours my whole life..."},
     {"character": "andrew", "mood": "inlove",     "text": "There's only one Leyley."},
     {"character": "andrew", "mood": "proud",     "text": "Am I not right here?"},
-
-
-
+    {"character": "andrew", "mood": "nervous", "trigger": "andrew_worried", "text": "Have to figure out."},
+    {"character": "andrew", "mood": "furious", "trigger": "andrew_worried", "text": "She's mine."},
     {"character": "ashley", "mood": "pout",        "text": "Andy Andy Andy."},
     {"character": "ashley", "mood": "hmm",      "text": "I'm bored."},
     {"character": "ashley", "mood": "emotionally_hurt", "text": "Why are you pushing me away?"},
