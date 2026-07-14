@@ -356,8 +356,36 @@ class Pet:
             self._update_sleep(dt)  # accumulate idle-toward-sleep (time-gated)
             if self.idle_timer <= 0 and not settling:
                 self.wander()
+        # Real-time separation: if (while idle, not dragged/frozen/asleep) the
+        # pet has ended up on top of its partner, nudge the actual position out
+        # along the line between them. The wander-target nudge only fires when
+        # a NEW target is chosen, so two pets can still converge mid-walk and
+        # overlap at rest; this catches that by checking every frame. Skipped
+        # during drag (user placing them), freeze (mid-line), and sleep (Andy
+        # sleeps pressed to Ashley). cling/chase land at _beside=138px>MIN so
+        # scripted approaches aren't broken.
+        self._push_apart_from_partner()
         self._clamp_position(size)
         self._move_window()
+
+    def _push_apart_from_partner(self):
+        """If currently overlapping the partner and it's safe to move, slide
+        this pet's position out to MIN_PARTNER_DISTANCE along the join line."""
+        if (not self.partner_ref or self._drag_data
+                or self.state == self.STATE_SLEEPING
+                or self.state == self.STATE_WANDERING):
+            return
+        px, py = self.partner_ref.x, self.partner_ref.y
+        dx, dy = self.x - px, self.y - py
+        d = math.hypot(dx, dy)
+        if d >= config.MIN_PARTNER_DISTANCE:
+            return
+        if d > 0:
+            self.x = px + (dx / d) * config.MIN_PARTNER_DISTANCE
+            self.y = py + (dy / d) * config.MIN_PARTNER_DISTANCE
+        else:
+            # Exactly coincident: push along +x.
+            self.x = px + config.MIN_PARTNER_DISTANCE
 
     def _update_sleep(self, dt):
         """Per-character sleep, gated by wall-clock window (see config):
