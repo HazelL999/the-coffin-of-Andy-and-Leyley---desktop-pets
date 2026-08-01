@@ -787,11 +787,36 @@ class PetApp:
         # periodic pet lift (which would otherwise bump pets back on top),
         # and lift the vision window itself to the very front.
         self._lift_paused = True
+        # Also lower an open backpack so the vision (full-screen image)
+        # stays the topmost visible window — the backpack is a normal UI
+        # topmost and would otherwise sit on top of the vision.
+        backpack_was_open = (self.backpack is not None
+                             and self.backpack.win is not None)
+        if backpack_was_open:
+            try:
+                self.backpack.win.lower()
+            except Exception:
+                pass
         vw.show()
         try:
             vw.win.lift()
         except Exception:
             pass
+        if backpack_was_open:
+            # Restore the backpack above the pets once the vision closes.
+            prev_on_close = vw.on_close
+
+            def _restore_both():
+                try:
+                    setattr(self, "_lift_paused", False)
+                except Exception:
+                    pass
+                if self.backpack is not None and self.backpack.win is not None:
+                    try:
+                        self.backpack.win.lift()
+                    except Exception:
+                        pass
+            vw.on_close = _restore_both
 
     def _on_summon_altar(self, pet):
         """Summon a temporary altar window next to the right-clicked pet."""
