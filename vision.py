@@ -19,10 +19,11 @@ import platform_utils
 class VisionWindow:
     """A transient popup showing one vision image."""
 
-    def __init__(self, root, image_path, auto_close_ms=5000):
+    def __init__(self, root, image_path, auto_close_ms=5000, on_close=None):
         self.root = root
         self.image_path = image_path
         self.auto_close_ms = auto_close_ms
+        self.on_close = on_close        # called (no args) when the vision closes
         self.win = None
         self._photo = None  # keep ref
         self._close_after_id = None
@@ -110,3 +111,8 @@ class VisionWindow:
             except Exception:
                 pass
         self.win = None
+        if self.on_close is not None:
+            try:
+                self.on_close()
+            except Exception:
+                pass

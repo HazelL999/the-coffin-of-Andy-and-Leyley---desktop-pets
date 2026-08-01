@@ -357,6 +357,10 @@ class PetApp:
         # Throttled topmost refresh: re-lift both pets every LIFT_INTERVAL_S so
         # other topmost windows don't bury them. Skips a pet mid-drag.
         self._last_lift = 0.0
+        # When a vision popup is open, pause the periodic pet lift so the
+        # vision stays above the sprites (otherwise pets get bumped back on
+        # top every LIFT_INTERVAL_S).
+        self._lift_paused = False
         self._tick()
 
     def _build_control_panel(self, no_interaction):
@@ -551,7 +555,8 @@ class PetApp:
         # windows (taskbar, our own panel/popups, other apps) can't bury them.
         # Skip a pet that's being dragged right now (would yank it under the
         # cursor).
-        if now - self._last_lift >= config.LIFT_INTERVAL_S:
+        if (now - self._last_lift >= config.LIFT_INTERVAL_S
+                and not self._lift_paused):
             self._last_lift = now
             if platform_utils.is_macos():
                 # macOS: use lift() only. Toggling -topmost off-then-on
@@ -776,8 +781,17 @@ class PetApp:
             return
         pick = self.rng.choice(visions)
         path = os.path.join(config.VISION_DIR, pick)
-        vw = VisionWindow(self.root, path)
+        vw = VisionWindow(self.root, path,
+                          on_close=lambda: setattr(self, "_lift_paused", False))
+        # Keep the vision above the sprites for its lifetime: pause the
+        # periodic pet lift (which would otherwise bump pets back on top),
+        # and lift the vision window itself to the very front.
+        self._lift_paused = True
         vw.show()
+        try:
+            vw.win.lift()
+        except Exception:
+            pass
 
     def _on_summon_altar(self, pet):
         """Summon a temporary altar window next to the right-clicked pet."""
