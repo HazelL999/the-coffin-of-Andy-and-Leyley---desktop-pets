@@ -7,8 +7,15 @@ import math
 import random
 import time
 import json
+from datetime import datetime
 
 import tkinter as tk
+
+
+def _today_str():
+    """Current calendar date as YYYY-MM-DD (for per-day caps that roll over
+    at midnight). Local time — matches the greeting/sleep window logic."""
+    return datetime.now().strftime("%Y-%m-%d")
 
 import config
 import platform_utils
@@ -47,6 +54,20 @@ class InteractionDirector:
         self.next_at = time.monotonic() + self.rng.uniform(*config.INTERACTION_RANGE)
         self.active = False
         self.global_cooldown = 0.0  # last trigger time
+        # Per-day choice-popup cap (CHOICE_DAILY_MAX). Counted within the
+        # session; rolls over when the calendar date changes. A relaunch
+        # starts the counter at 0 (acceptable: relaunch is a user action).
+        self._choice_count_today = 0
+        self._choice_date = _today_str()
+
+    def _choice_allowed(self):
+        """True if a choice scene may still fire today (under the daily cap).
+        Resets the counter if the calendar day rolled over since the last check."""
+        today = _today_str()
+        if today != self._choice_date:
+            self._choice_date = today
+            self._choice_count_today = 0
+        return self._choice_count_today < config.CHOICE_DAILY_MAX
 
     def maybe_trigger(self, now):
         if not self.enabled or len(self.pets) < 2 or self.active:
@@ -89,11 +110,15 @@ class InteractionDirector:
             # no dialogues configured -> fall through to a cling scene
             scene = "cling"
         if scene == "choice" and self.dialogue_store:
-            choice = self.dialogue_store.random_choice(self.rng)
-            if choice:
-                self._approach_choice(choice)
-                return
-            scene = "cling"  # no choices configured -> fall through
+            # Gate the choice popup to CHOICE_DAILY_MAX per day. When the cap
+            # is hit, silently downgrade to a cling exchange so interactions
+            # still occur without popup spam.
+            if self._choice_allowed():
+                choice = self.dialogue_store.random_choice(self.rng)
+                if choice:
+                    self._approach_choice(choice)
+                    return
+            scene = "cling"  # capped today (or no choices configured) -> cling
         if scene == "chase":
             self._approach_chase(andrew, ashley)
         else:
@@ -114,7 +139,7 @@ class InteractionDirector:
         ashley.facing = "right" if andrew.x >= ashley.x else "left"
         ashley.state = Pet.STATE_WANDERING
         andrew.facing = "left" if andrew.x >= ashley.x else "right"
-        ashley.win.after(2500, lambda: self._exchange(ashley, andrew))
+        ashley.win.after(4200, lambda: self._exchange(ashley, andrew))
 
     def _approach_chase(self, andrew, ashley):
         # Andrew chases Ashley. After he's been walking a moment, Ashley
@@ -138,8 +163,8 @@ class InteractionDirector:
             andrew.target_x, andrew.target_y = self._beside(andrew, ashley)
             andrew.facing = "right" if ashley.x >= andrew.x else "left"
 
-        andrew.win.after(1100, evade)
-        andrew.win.after(2600, lambda: self._exchange(andrew, ashley))
+        andrew.win.after(1800, evade)
+        andrew.win.after(4200, lambda: self._exchange(andrew, ashley))
 
     def _approach_scripted(self, beats):
         """Play a fixed dialogue sequence. The first speaker walks up to the
@@ -164,7 +189,7 @@ class InteractionDirector:
             other.facing = "left" if other.x >= first.x else "right"
             first.state = Pet.STATE_WANDERING
         # Let the approach walk a moment before the first line.
-        self._play_beats(beats, first, start_delay=2200)
+        self._play_beats(beats, first, start_delay=4200)
 
     def _play_beats(self, beats, first, start_delay=0):
         """Speak each beat in order (used by both scripted scenes and
@@ -213,6 +238,14 @@ class InteractionDirector:
         """A player-choice scene: the speaker walks up to the other, asks a
         question (as a speech bubble), then a choice popup appears. The user's
         pick adjusts codependency and triggers a response line."""
+        # Count this against the daily cap (the scene passed the gate in
+        # _start, so the counter is under CHOICE_DAILY_MAX). Rolling over the
+        # day here too, in case a scene straddles midnight.
+        today = _today_str()
+        if today != self._choice_date:
+            self._choice_date = today
+            self._choice_count_today = 0
+        self._choice_count_today += 1
         speaker_name = choice["speaker"]
         question = choice["question"]
         options = choice["options"]
@@ -277,7 +310,7 @@ class InteractionDirector:
                               lambda: self._finish())
 
         # Schedule the ask after the approach walk.
-        speaker.win.after(2200, ask)
+        speaker.win.after(4200, ask)
 
 
 class PetApp:
@@ -659,51 +692,43 @@ class PetApp:
                 self._andrew_worried(pet)
 
     def _ashley_angers(self, andrew):
-        """Ashley reacts angrily to Andrew being poked repeatedly."""
+        """Ashley reacts angrily to Andrew being poked repeatedly. Fires
+        immediately where she stands (turns to face him and snaps) rather
+        than walking over — the user wanted the reaction to be instant, so
+        no 1.5s approach delay. speak() freezes her and Andrew via the
+        partner-freeze callback."""
         ash = andrew.partner_ref
         if not ash or not ash.win:
             return
         self.codep.adjust("ashley", config.CODEP_CLICK_ASHLEY_DELTA)
-        # Ashley walks over to Andrew and snaps.
-        ash.target_x, ash.target_y = self.director._beside(ash, andrew)
+        # Turn to face Andrew in place, then snap from the ashley_angers
+        # trigger pool (these lines only make sense in this event, so they're
+        # excluded from random idle dialogue).
         ash.facing = "right" if andrew.x >= ash.x else "left"
-        ash.state = Pet.STATE_WANDERING
-        def snap():
-            # Use the ashley_angers trigger pool: these lines ("Stop poking
-            # him!" etc.) only make sense in this event, so they're excluded
-            # from random idle dialogue and only surface here.
-            line = ash.dialogue.random_triggered("ashley", "ashley_angers",
-                                                  rng=ash.rng)
-            if line:
-                ash.speak(line)
-        ash.win.after(1500, snap)
+        line = ash.dialogue.random_triggered("ashley", "ashley_angers",
+                                              rng=ash.rng)
+        if line:
+            ash.speak(line)
 
     def _andrew_worried(self, ashley):
         """Andrew reacts (worried/possessive) to Ashley being poked repeatedly.
         Mirrors _ashley_angers but for the reverse direction: the partner who
-        was NOT poked walks over and speaks from the andrew_worried pool."""
+        was NOT poked snaps in place immediately from the andrew_worried pool."""
         andrew = ashley.partner_ref
         if not andrew or not andrew.win:
             return
         # Trigger-time adjustment: poking Ashley to the rage threshold makes
-        # Andrew cling harder (+5) and Ashley recoil a touch (-2). Only fires
+        # Andrew cling harder (+2) and Ashley recoil a touch (-1). Only fires
         # once on the threshold, not each poke.
         self.codep.adjust("andrew", config.CODEP_POKE_ASHLEY_ANDREW)
         self.codep.adjust("ashley", config.CODEP_POKE_ASHLEY_ASHLEY)
-        # Andrew walks over to Ashley and freaks out.
-        andrew.target_x, andrew.target_y = self.director._beside(andrew, ashley)
+        # Turn to face Ashley in place, then freak out from the andrew_worried
+        # trigger pool (excluded from random idle dialogue).
         andrew.facing = "right" if ashley.x >= andrew.x else "left"
-        andrew.state = Pet.STATE_WANDERING
-
-        def freak_out():
-            # Use the andrew_worried trigger pool: these lines ("She's mine."
-            # etc.) only make sense in this event, so they're excluded from
-            # random idle dialogue and only surface here.
-            line = andrew.dialogue.random_triggered("andrew", "andrew_worried",
-                                                    rng=andrew.rng)
-            if line:
-                andrew.speak(line)
-        andrew.win.after(1500, freak_out)
+        line = andrew.dialogue.random_triggered("andrew", "andrew_worried",
+                                                rng=andrew.rng)
+        if line:
+            andrew.speak(line)
 
     def check_state(self, pet):
         """Pop a small window showing ONE pet's codependency / mental state

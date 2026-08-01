@@ -61,8 +61,8 @@ ANIM_FRAME_DEFAULT_MS = 100     # fallback per-frame duration for PNG sequences
 TRANSITION_DELAY_MS = 400        # -1 shows this long before switching to -2 on speak()
 
 # --- Movement ---
-WALK_SPEED_PX_S = 30           # pixels per second (slowed: less frantic wandering)
-IDLE_PAUSE_RANGE = (2.0, 6.0)  # seconds the pet idles between wanders (longer = calmer)
+WALK_SPEED_PX_S = 18           # pixels per second (slowed further: calmer wander)
+IDLE_PAUSE_RANGE = (3.0, 8.0)  # seconds the pet idles between wanders (longer = calmer)
 SCREEN_MARGIN = 20              # keep pets this far from screen edges
 # The two pets stay at least this far apart center-to-center when wandering,
 # so they don't pile on top of each other. Dragging bypasses wander, so the
@@ -127,14 +127,23 @@ ASHLEY_SLEEP_MOOD = "content"  # mood shown while Ashley sleeps (no dedicated ar
 CLICK_WINDOW_S = 3.0           # multi-click window for "Andrew poked N times"
 CLICK_RAGE_THRESHOLD = 3       # clicks within window that angers Ashley
 CLICK_DRAG_PX = 5              # move less than this = a click, not a drag
-CODEP_CLICK_ASHLEY_DELTA = -8.0   # Ashley codependency drop when Andrew is poked to rage (trigger only)
+# Codependency discrete deltas (2026-08-01 mid-trim): the prior values pushed
+# the bond to 99.5 within hours. All trimmed together with state.tick rates so
+# the red line surfaces ~once a day instead of several times. Poke deltas are
+# scaled too so a single rage event can't wipe a whole day's drift.
+CODEP_CLICK_ASHLEY_DELTA = -4.0   # Ashley codependency drop when Andrew is poked to rage (trigger only)
 # (poke no longer nudges per-click; both directions adjust only on the
 #  3-poke rage threshold. poke-Ashley uses the two consts below.)
-CODEP_POKE_ASHLEY_ANDREW = 5.0    # Andrew rises when Ashley is poked to rage-threshold
-CODEP_POKE_ASHLEY_ASHLEY = -2.0   # Ashley drops when she herself is poked to rage-threshold
-CODEP_DRAG_ONTO_DELTA = 5.0       # both rise when one is dragged onto the other
-CODEP_CHOICE_BONUS = 5.0          # both rise on any choice-dialog reply (engaging bonds them)
-CODEP_SCRIPTED_BONUS = 1.0        # both rise on a random scripted scene firing
+CODEP_POKE_ASHLEY_ANDREW = 2.0    # Andrew rises when Ashley is poked to rage-threshold
+CODEP_POKE_ASHLEY_ASHLEY = -1.0   # Ashley drops when she herself is poked to rage-threshold
+CODEP_DRAG_ONTO_DELTA = 2.0       # both rise when one is dragged onto the other
+CODEP_CHOICE_BONUS = 1.5          # both rise on any choice-dialog reply (engaging bonds them)
+CODEP_SCRIPTED_BONUS = 0.15       # both rise on a random scripted scene firing
+# Player-choice popups are gated to at most this many per day (session-counted;
+# resets on calendar-day rollover, restarts from 0 on app relaunch). When the
+# cap is hit, the choice scene downgrades to a cling exchange so interactions
+# still happen without the popup spam.
+CHOICE_DAILY_MAX = 2
 
 # --- Bond line (visualizes peak mutual codependency) ---
 # The faint red line appears when BOTH pets' codependency is at or above

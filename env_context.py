@@ -73,7 +73,14 @@ class EnvContext:
         # Startup greeting state, persisted across restarts.
         self._greeted_today = False
         # Late-night state for change detection (fire once on entering night).
-        self._is_late_night = False
+        # Initialized to the launch-time truth: if the app starts INSIDE the
+        # late-night window, treat the night as already-announced so the first
+        # poll() doesn't fire a late-night line 10 minutes after startup —
+        # the startup greeting already covered this hour. Only a transition
+        # INTO the window during a running session fires the line.
+        start_hour = datetime.now().hour
+        self._is_late_night = (start_hour >= config.LATE_NIGHT_START
+                               or start_hour < config.LATE_NIGHT_END)
 
     # ---------- helpers ----------
 

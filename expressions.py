@@ -150,7 +150,7 @@ MOOD_CODEP_DELTA = {
     "evil_grin":  +0.1,
     "shy":        +0.3,
     "cute":       +0.2,
-    "rapture":    +0.8,
+    "rapture":    +0.3,
     "indifferent": -0.3,
     "unhappy":    -0.4,
     "anxious":    -0.3,
@@ -185,13 +185,13 @@ MOOD_CODEP_DELTA = {
     "are_u_serious": -0.2,
     "no_way":     -0.3,
     # --- Shared moods (both characters have art; one delta each) ---
-    "inlove":     +1.0,   # strong bond
-    "content":    +0.4,
-    "happy":      +0.3,
+    "inlove":     +0.3,   # strong bond
+    "content":    +0.2,
+    "happy":      +0.15,
     "sinister":   +0.2,
     "neutral":     0.0,
     "scared":     +0.3,
-    "worried":    +0.3,   # worry reads as clingy, not withdrawal
+    "worried":    +0.1,   # worry reads as clingy; appears often at far/very_far
     "furious":    -0.8,   # meltdown
     "mad":        -0.5,
 }

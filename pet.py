@@ -831,6 +831,13 @@ class Pet:
         # (e.g. AI chat) or when a partner moves away (see _update_sleep).
         if self.state == self.STATE_SLEEPING:
             return
+        # While frozen (someone is speaking — a long dialogue exchange or a
+        # partner's line), hold the current mood and position so the non-
+        # speaking pet doesn't drift to a random face mid-conversation. Only
+        # wander/expression are muted; a queued dialogue is already gated by
+        # PetApp (director.active -> downgrade) and the speak cooldown.
+        if time.monotonic() < self._frozen_until and event in ("expression", "wander"):
+            return
         if event == "wander":
             if self.movement_enabled:
                 self.wander()

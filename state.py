@@ -84,25 +84,31 @@ class CodependencyState:
         """Apply proximity drift to both characters. Called every tick by
         PetApp with the current inter-pet distance band.
 
-        Tuned (2026-07-14 round 3) so the red bond line surfaces every few
-        days, not multiple times a day. The prior round (+0.3/-0.01/-0.02/
-        -0.04 with 7% near-fraction) drifted up too fast. Now: closeness
-        builds the bond at a moderate rate; separation cools it back toward
-        the same speeds as the original rebalance, so the value oscillates
-        up over days instead of rocketing. Per-second rates (x dt):
-          very_near: both +0.2   (pressed close -> bond builds)
-          close:     both -0.05 (apart -> slowly cools)
-          far:       both -0.15 (apart -> cooling faster)
-          very_far:  both -0.3  (abandoned -> bleeds)
-        With ~6% near-fraction and the discrete bonuses (choice +5, scripted
-        +1, drag-onto +5) the net is slowly positive over a day -> red line
-        every few days.
+        Tuned (2026-08-01 mid-trim) so the red bond line surfaces ~once a
+        day, not within a few hours. The prior round (+0.2/-0.05/-0.15/-0.3)
+        plus the old discrete bonuses (+1 per scene, +5 per choice/drag)
+        drove the value to 99.5 in hours. The pets spend most of their time
+        at 'close' (kept ~one body-length apart by MIN_PARTNER_DISTANCE), so
+        'close' is now neutral — the bond only RISES when genuinely pressed
+        together (very_near) and only COOLS when genuinely separated (far/
+        very_far). That makes the rate depend on how much time they actually
+        spend smothering vs. wandering apart, with the trimmed discrete
+        bonuses (see config.CODEP_*) layered on top. Per-second rates (x dt):
+          very_near: both +0.03  (pressed close -> bond builds, slowly)
+          close:     both  0.0  (resting one body apart -> holds)
+          far:       both -0.01 (wandering apart -> gentle cooling)
+          very_far:  both -0.03 (well apart -> bleeds)
+        With the trimmed discrete bonuses (choice +1.5 capped 2/day,
+        scripted +0.15, drag-onto +2) the net is meant to reach 99.5 roughly
+        once a day. This is sensitive to actual band occupancy (unknown until
+        played); tune very_near up or far/very_far down if it's too rare/too
+        frequent after a real session.
         """
         rates = {
-            "very_near": (+0.2, +0.2),
-            "close":     (-0.05, -0.05),
-            "far":       (-0.15, -0.15),
-            "very_far":  (-0.3, -0.3),
+            "very_near": (+0.03, +0.03),
+            "close":     (0.0, 0.0),
+            "far":       (-0.01, -0.01),
+            "very_far":  (-0.03, -0.03),
         }
         da, ds = rates.get(distance_band, (0.0, 0.0))
         if da:
