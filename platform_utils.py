@@ -223,11 +223,14 @@ if _mac_pyobjc_available():
     import objc as _objc
 
     class _SpriteLayer(_AppKit.NSView):
-        """A transparent NSView that draws one NSImage; click-through.
+        """A transparent NSView that draws one NSImage; fully click-through.
 
-        hitTest_ returns None so the view never claims mouse events — they
-        fall through to the Tk Canvas underneath, keeping Tk's <Button-1>
-        drag/poke bindings working over the sprite area.
+        hitTest_ returns None so the view never claims hit-testing. Plus we
+        forward rightMouseDown (and other non-left mouse downs) to the next
+        responder — Mac trackpad two-finger tap fires rightMouseDown, which
+        bypasses hit-testing and would otherwise get swallowed by this
+        subview, hiding the Tk Canvas <Button-2> menu binding. Forwarding
+        lets it reach the Tk contentView like a normal right click.
         """
 
         def initWithFrame_image_(self, frame, image):
@@ -248,8 +251,20 @@ if _mac_pyobjc_available():
                     _AppKit.NSCompositeSourceOver, 1.0)
 
         def hitTest_(self, point):
-            # Click-through: never claim the event. Lets Tk Canvas receive it.
+            # Never claim hit-testing — let the Tk Canvas underneath get it.
             return None
+
+        def rightMouseDown_(self, event):
+            # Forward right-click (two-finger tap) to the next responder so
+            # the Tk Canvas <Button-2> binding fires the right-click menu.
+            nr = self.nextResponder()
+            if nr is not None:
+                nr.rightMouseDown_(event)
+
+        def otherMouseDown_(self, event):
+            nr = self.nextResponder()
+            if nr is not None:
+                nr.otherMouseDown_(event)
 
 
 def _resolve_ns_window(tk_win):
