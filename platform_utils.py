@@ -161,9 +161,15 @@ def set_click_through(win, on):
 def bind_context_menu(win, handler):
     """Bind right-click cross-platform to call handler(event).
 
-    Windows/Linux: Button-3. macOS: Button-2 and Ctrl-Button-1.
+    Windows/Linux: Button-3. macOS: Button-2 and Ctrl-Button-1, PLUS
+    Double-Button-1 (a double-click) — MacBook trackpads often have no
+    right-button gesture that Tk maps to Button-2, so a plain double-click
+    is the most discoverable way to open the menu. The double-click also
+    fires two Button-1 events (counted as pokes), but stays under the rage
+    threshold of 3, so it won't spuriously trigger the anger reaction.
     """
     win.bind("<Button-3>", handler)
     if is_macos():
         win.bind("<Button-2>", handler)
         win.bind("<Control-Button-1>", handler)
+        win.bind("<Double-Button-1>", handler)
