@@ -266,5 +266,24 @@
     {"text": "No.", "codep": {"andrew": 1, "ashley": 8}, "response": {"character": "andrew", "mood": "you know me well", "text": "Only Leyley."}}
   ]
 }
+  ],
+  "_companion_comment": "Companion-mode lines: spoken when the user's frontmost app category changes while companion mode is on. Categories must match companion._categorize output: coding/gaming/video/music/chat/writing/browsing/idle.",
+  "companion": [
+    {"category": "coding", "sequence": [{"character": "andrew", "mood": "thinking", "text": "...stuck again?"}, {"character": "ashley", "mood": "chuckle", "text": "Need me to think for you, Andy?"}]},
+    {"category": "coding", "sequence": [{"character": "ashley", "mood": "hmm", "text": "All those tabs. ...You're not hiding something from me, are you?"}]},
+    {"category": "gaming", "sequence": [{"character": "andrew", "mood": "indifferent", "text": "...fun game."}, {"character": "ashley", "mood": "provoking", "text": "More fun than me, Andy?"}]},
+    {"category": "gaming", "sequence": [{"character": "ashley", "mood": "pout", "text": "Pay attention to me instead."}]},
+    {"category": "video", "sequence": [{"character": "andrew", "mood": "unhappy", "text": "...binge-watching again."}, {"character": "ashley", "mood": "content", "text": "Cuddle in and watch with me, Andy."}]},
+    {"category": "video", "sequence": [{"character": "ashley", "mood": "sinister", "text": "This is fine. ...Watch the screen, not the door."}]},
+    {"category": "music", "sequence": [{"character": "andrew", "mood": "content", "text": "...nice song."}, {"character": "ashley", "mood": "happy", "text": "I'll hum along. For you."}]},
+    {"category": "music", "sequence": [{"character": "ashley", "mood": "giggles", "text": "Dance with me, Andy. ...Don't be shy."}]},
+    {"category": "chat", "sequence": [{"character": "ashley", "mood": "provoking", "text": "Who are you talking to?"}, {"character": "andrew", "mood": "awkward", "text": "...nobody."}]},
+    {"category": "chat", "sequence": [{"character": "ashley", "mood": "furious", "text": "Put the phone down. NOW."}]},
+    {"category": "writing", "sequence": [{"character": "andrew", "mood": "thinking", "text": "...writing it all down?"}, {"character": "ashley", "mood": "hmm", "text": "Make sure you write about me, Andy."}]},
+    {"category": "writing", "sequence": [{"character": "ashley", "mood": "regreful", "text": "Don't write a word without me."}]},
+    {"category": "browsing", "sequence": [{"character": "andrew", "mood": "unhappy", "text": "...scrolling forever."}, {"character": "ashley", "mood": "indifferent", "text": "Boring. Find something about us instead."}]},
+    {"category": "browsing", "sequence": [{"character": "ashley", "mood": "chuckle", "text": "Looking at me, Andy? ...Even on a screen, you can't help it."}]},
+    {"category": "idle", "sequence": [{"character": "andrew", "mood": "content", "text": "...just sitting there?"}, {"character": "ashley", "mood": "content", "text": "Then sit with me, Andy. ...I'll keep you company."}]},
+    {"category": "idle", "sequence": [{"character": "ashley", "mood": "chuckle", "text": "Nothing to do? Good. Then you're all mine."}]}
   ]
 }

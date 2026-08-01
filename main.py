@@ -19,6 +19,7 @@ def _today_str():
 
 import config
 import platform_utils
+import theme
 import scheduler as sched_mod
 from asset_loader import AssetLoader
 from dialogue import DialogueStore
@@ -336,7 +337,8 @@ class PetApp:
                       on_open_backpack=self._on_open_backpack,
                       on_set_city=self._on_set_city,
                       on_ai_chat=self._on_ai_chat,
-                      on_toggle_music=self._on_toggle_music)
+                      on_toggle_music=self._on_toggle_music,
+                      on_toggle_companion=self._toggle_companion)
             pet.start()
             self.pets.append(pet)
 
@@ -373,6 +375,16 @@ class PetApp:
                              director=self.director)
         self.root.after(1500, self.env.startup_greeting)  # let the GUI settle
 
+        # Companion mode: parks both pets in the bottom-right, gently floating,
+        # and watches the frontmost app to drop a comment when its category
+        # changes. Off by default; turned on via the right-click menu.
+        # _companion_active is set on toggle; the observer is polled in _tick
+        # only while it's on.
+        self._companion_active = False
+        from companion import CompanionObserver
+        self.companion = CompanionObserver(self.root, self.pets, self.rng,
+                                           self.dialogue, director=self.director)
+
         # Background music: pygame.mixer looped playback. Best-effort — if
         # pygame isn't installed or no music files, the app runs silently.
         from music_player import MusicPlayer
@@ -403,31 +415,39 @@ class PetApp:
         self.panel.attributes("-topmost", True)
         self.panel.resizable(False, False)
         # Keep it a normal opaque window so it's always grabbable (even when a
-        # pet is in click-through mode on macOS).
+        # pet is in click-through mode on macOS). Strict black bg + white text
+        # via the shared theme (also flattens Mac Aqua button bevels).
+        self.panel.config(bg=theme.BG)
 
-        tk.Label(self.panel, text="Andy & Leyley", font=(config.UI_FONT, 10, "bold")) \
-            .pack(pady=(6, 2))
+        tk.Label(self.panel, text="Andy & Leyley",
+                 font=(config.UI_FONT, 10, "bold"),
+                 fg=theme.FG, bg=theme.BG).pack(pady=(6, 2))
 
-        btns = tk.Frame(self.panel)
+        btns = tk.Frame(self.panel, bg=theme.BG)
         btns.pack()
 
-        tk.Button(btns, text="Quit", width=7, command=self.quit).pack(side="left", padx=3)
+        theme.style_button(
+            tk.Button(btns, text="Quit", width=7,
+                       command=self.quit)).pack(side="left", padx=3)
 
         self.interaction_on = not no_interaction
-        self.inter_btn = tk.Button(btns, text="Interact: ON" if self.interaction_on else "Interact: OFF",
-                                   width=11, command=self._toggle_interaction)
+        self.inter_btn = theme.style_button(
+            tk.Button(btns,
+                      text="Interact: ON" if self.interaction_on else "Interact: OFF",
+                      width=11, command=self._toggle_interaction))
         self.inter_btn.pack(side="left", padx=3)
 
         if platform_utils.is_macos():
             self.click_through_on = False
-            self.ct_btn = tk.Button(self.panel,
-                                    text="Click-through: OFF", width=18,
-                                    command=self._toggle_click_through)
+            self.ct_btn = theme.style_button(
+                tk.Button(self.panel, text="Click-through: OFF", width=18,
+                          command=self._toggle_click_through))
             self.ct_btn.pack(pady=4)
         else:
             # Position hint label instead.
             tk.Label(self.panel, text="Right-click a pet for more",
-                     font=(config.UI_FONT, 8), fg="#666").pack(pady=(2, 0))
+                     font=(config.UI_FONT, 8),
+                     fg=theme.FG_DIM, bg=theme.BG).pack(pady=(2, 0))
 
         # Place panel near bottom-right of the primary screen.
         try:
@@ -571,12 +591,19 @@ class PetApp:
                 # dialogue line that would talk over the scripted beats. Wander
                 # is harmless (movement), expression just changes the face, so
                 # only dialogue is muted — the pet still acts, just stays quiet.
-                if event == "dialogue" and self.director.active:
+                # In companion mode the pet is parked: dialogue is muted too so
+                # only the frontmost-app observer (not idle chatter) speaks.
+                if event == "dialogue" and (self.director.active or self._companion_active):
                     event = "wander"
                 pet.handle_event(event)
 
         self._update_distance_bands()
-        self.director.maybe_trigger(now)
+        # Companion mode: skip random interaction scenes (the pets are parked
+        # and watching). The observer is polled instead, below.
+        if not self._companion_active:
+            self.director.maybe_trigger(now)
+        else:
+            self.companion.poll()
 
         # Environment: weather + todo reactivity (throttled inside poll()).
         self.env.poll()
@@ -742,11 +769,13 @@ class PetApp:
         win.geometry("240x130")
         win.attributes("-topmost", True)
         win.resizable(False, False)
+        win.config(bg=theme.BG)
         text = (f"{emoji}  {disp}\n\n"
                 f"  codependency: {v:.0f}  ({lvl})\n"
                 f"  mental state: {label}")
         tk.Label(win, text=text, font=(config.UI_FONT, 10),
-                 justify="left", padx=14, pady=14).pack()
+                 justify="left", padx=14, pady=14,
+                 fg=theme.FG, bg=theme.BG).pack()
         win.protocol("WM_DELETE_WINDOW", win.destroy)
 
     def _on_open_backpack(self):
@@ -784,6 +813,41 @@ class PetApp:
         """Open the AI-chat dialog for the right-clicked pet."""
         import ai_dialog
         ai_dialog.open_ai_dialog(self.root, pet, director=self.director)
+
+    def _toggle_companion(self, pet=None):
+        """Toggle companion mode for BOTH pets. On: park them side by side in
+        the screen's bottom-right corner with a gentle float, mute random
+        dialogue/interactions, and start the frontmost-app observer. Off:
+        resume free movement and stop observing. (Called from any pet's
+        right-click "Companion mode" — coordinates both regardless.)"""
+        self._companion_active = not self._companion_active
+        if self._companion_active:
+            anchors = self._companion_anchors()
+            for i, p in enumerate(self.pets):
+                # Phase offset per pet so the two bob out of lockstep.
+                p.set_companion_mode(True, anchor=anchors[i], phase=i * math.pi)
+            # Reset the observer's baseline so it doesn't fire immediately for
+            # whatever was already open when the mode turned on.
+            self.companion._first = True
+            self.companion._last_cat = None
+        else:
+            for p in self.pets:
+                p.set_companion_mode(False)
+            self.companion._first = True
+            self.companion._last_cat = None
+
+    def _companion_anchors(self):
+        """Two side-by-side rest positions (sprite top-left coords) in the
+        bottom-right corner, one body-length apart. pets[0] sits left, pets[1]
+        right, both kept COMPANION_MARGIN from the screen edges."""
+        x0, y0, x1, y1 = self.bounds
+        size = config.PLACEHOLDER_SIZE
+        m = config.COMPANION_MARGIN
+        gap = config.COMPANION_SIDE_GAP
+        right_x = (x1 - m) - size          # right pet's left edge
+        left_x = right_x - gap            # left pet's left edge
+        bottom_y = (y1 - m) - size
+        return [(left_x, bottom_y), (right_x, bottom_y)]
 
     def _on_use_talisman(self):
         """Consume one talisman charge and show a random vision image.

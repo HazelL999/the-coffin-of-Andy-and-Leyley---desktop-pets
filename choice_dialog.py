@@ -4,6 +4,8 @@ and the chosen option's codep deltas + response line are applied by the
 caller via the on_choice callback.
 
 Mirrors city_dialog.py / ai_dialog.py's Toplevel pattern (topmost, dark bg).
+Uses the shared theme (theme.py) for strict black bg + white text so macOS
+Aqua's native button bevel can't wash it out.
 """
 
 import tkinter as tk
@@ -11,8 +13,9 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 import config
+import theme
 
-_BG = (0x1a, 0x1a, 0x1e)
+_BG = (0x14, 0x14, 0x14)  # dialog background, matched to theme.BG for sprite compositing
 _SPRITE_SIZE = config.PLACEHOLDER_SIZE
 
 
@@ -53,23 +56,23 @@ def open_choice_dialog(root, character, mood, question, options, on_choice):
     win.title("...")
     win.attributes("-topmost", True)
     win.resizable(False, False)
-    win.config(bg="#1a1a1e")
+    win.config(bg=theme.BG)
 
     # Sprite at top.
     photo = _load_sprite(character, mood)
     if photo:
-        sprite_lbl = tk.Label(win, image=photo, bg="#1a1a1e", bd=0)
+        sprite_lbl = tk.Label(win, image=photo, bg=theme.BG, bd=0)
         sprite_lbl.image = photo  # keep ref
         sprite_lbl.pack(padx=20, pady=(12, 4))
     else:
         # Fallback: show the character's display name as text.
         disp = config.CHARACTER_META.get(character, {}).get("display", character)
         tk.Label(win, text=disp, font=(config.UI_FONT, 14, "bold"),
-                 fg="#e0e0e0", bg="#1a1a1e").pack(pady=(16, 4))
+                 fg=theme.FG, bg=theme.BG).pack(pady=(16, 4))
 
     # Question text.
     tk.Label(win, text=question, font=(config.UI_FONT, 11),
-             fg="#e0e0e0", bg="#1a1a1e", wraplength=320, justify="center",
+             fg=theme.FG, bg=theme.BG, wraplength=320, justify="center",
              height=3).pack(padx=20, pady=(4, 8))
 
     # Option buttons.
@@ -78,11 +81,11 @@ def open_choice_dialog(root, character, mood, question, options, on_choice):
         on_choice(idx)
 
     for i, opt in enumerate(options):
-        tk.Button(win, text=opt["text"], width=28,
-                  font=(config.UI_FONT, 10),
-                  command=lambda i=i: pick(i),
-                  bg="#2b2d33", fg="#e0e0e0",
-                  activebackground="#3a3f4a",
-                  relief="flat", bd=0, padx=12, pady=6).pack(padx=20, pady=3)
+        theme.style_button(
+            tk.Button(win, text=opt["text"], width=28,
+                      font=(config.UI_FONT, 10),
+                      command=lambda i=i: pick(i),
+                      padx=12, pady=6)
+        ).pack(padx=20, pady=3)
 
     win.protocol("WM_DELETE_WINDOW", lambda: pick(0))  # closing = first option

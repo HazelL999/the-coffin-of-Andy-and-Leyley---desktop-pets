@@ -16,6 +16,7 @@ from PIL import Image, ImageTk
 
 import config
 import platform_utils
+import theme
 from asset_loader import _bake_for_windows
 
 # Where the user's cut sprites live (now relative to the project root).
@@ -448,7 +449,7 @@ class Altar:
 
     # ---------- context menu ----------
     def _on_context(self, event):
-        menu = tk.Menu(self.win, tearoff=0)
+        menu = theme.style_menu(tk.Menu(self.win, tearoff=0))
         menu.add_command(label="Sacrifice", command=self.sacrifice)
         menu.add_separator()
         menu.add_command(label="Dismiss", command=self._dismiss)

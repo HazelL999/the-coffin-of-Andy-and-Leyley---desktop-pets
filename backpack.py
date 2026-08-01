@@ -8,6 +8,7 @@ popping a vision image. Other items (rabbit dolls) are display-only for now.
 from PIL import Image, ImageTk
 
 import config
+import theme
 
 # Cell background the sprite sits on. Items are alpha-composited over this
 # color (NOT baked over the magenta transparent color): the backpack is an
@@ -15,7 +16,7 @@ import config
 # leave visible purple fringe around semi-transparent sprite edges — the
 # same class of bug as the pet sprite fringe, but here magenta can't be
 # matched away because the window isn't transparent.
-CELL_BG = "#1e2026"
+CELL_BG = theme.BG  # near-black cell, matches the dialog/panel theme
 
 
 class BackpackItem:
@@ -52,9 +53,9 @@ class Backpack:
         self.win.resizable(False, False)
         # Use a normal opaque window (like the control panel) so it's
         # clearly a UI surface, not a transparent sprite.
-        self.win.config(bg="#2b2d33")
+        self.win.config(bg=theme.BG_ELEVATED)
 
-        frame = tk.Frame(self.win, bg="#2b2d33")
+        frame = tk.Frame(self.win, bg=theme.BG_ELEVATED)
         frame.pack()
 
         for i, item in enumerate(self.items):
@@ -85,10 +86,10 @@ class Backpack:
                     lbl.bind("<Button-1>", lambda e: self._on_item_click(item))
             else:
                 tk.Label(cell_frame, text="?", font=(config.UI_FONT, 20),
-                         fg="#888", bg=CELL_BG).pack(pady=(20, 0))
+                         fg=theme.FG_DIM, bg=CELL_BG).pack(pady=(20, 0))
 
             name_lbl = tk.Label(cell_frame, text=item.name,
-                                font=(config.UI_FONT, 7), fg="#bbb",
+                                font=(config.UI_FONT, 7), fg=theme.FG_DIM,
                                 bg=CELL_BG)
             name_lbl.pack()
             if item.usable:
@@ -98,7 +99,7 @@ class Backpack:
             if item.usable:
                 self._charge_label = tk.Label(
                     cell_frame, text=f"×{self.talisman_charges}",
-                    font=(config.UI_FONT, 9, "bold"), fg="#ffd24a", bg=CELL_BG)
+                    font=(config.UI_FONT, 9, "bold"), fg=theme.ACCENT, bg=CELL_BG)
                 self._charge_label.place(relx=1.0, rely=0.0, x=-4, y=2,
                                          anchor="ne")
 

@@ -232,6 +232,18 @@ BUBBLE_MAX_WIDTH = 220       # px — wrap text past this
 # --- Sprite sizing ---
 PLACEHOLDER_SIZE = 128        # px — placeholder + assumed sprite size for clamping
 
+# --- Companion mode ---
+# Right-click -> "Companion mode" parks both pets in the bottom-right corner,
+# gently floating, with random dialogue/interactions muted. A CompanionObserver
+# reads the frontmost app and speaks a category-matched line when it changes.
+COMPANION_POLL_INTERVAL_S = 45    # how often the frontmost app is re-read
+COMPANION_FLOAT_AMP = 6           # px — gentle float amplitude (sine)
+COMPANION_FLOAT_PERIOD = 3.5     # seconds per float cycle
+COMPANION_MARGIN = 24             # px gap from the screen's right/bottom edge
+# The two pets sit side by side; the left one is offset left by this much so
+# they don't overlap (one body length, same idea as MIN_PARTNER_DISTANCE).
+COMPANION_SIDE_GAP = 128
+
 # --- Background music (pygame.mixer, cross-platform) ---
 # Drop .mp3 / .ogg / .wav files into assets/music/ — the first found file
 # is played on loop at startup. Right-click a pet → "🎵 Music on/off" toggles.

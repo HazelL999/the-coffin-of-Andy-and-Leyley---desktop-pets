@@ -72,6 +72,10 @@ class DialogueStore:
         self._todo_reminders: List[List[DialogueBeat]] = []
         # list[list[DialogueBeat]] — reunion sequences on long-absence relaunch
         self._reunions: List[List[DialogueBeat]] = []
+        # category ("coding"/"browsing"/"video"/...) -> list[list[DialogueBeat]]
+        # Companion-mode lines: spoken when the frontmost app's category
+        # changes. Each entry has a `category` + a `sequence` of beats.
+        self._companion: dict = {}
         # list[dict] — player-choice scenes (raw dicts: speaker/question/options)
         self._choices: list = []
 
@@ -256,6 +260,21 @@ class DialogueStore:
             if len(beats) == len(seq):
                 store._reunions.append(beats)
 
+        # Companion-mode lines: keyed by the frontmost app's category. Each
+        # entry has a `category` string + a `sequence` of beats (spoken when
+        # the user's active-app category changes while companion mode is on).
+        companion = data.get("companion", []) if isinstance(data, dict) else []
+        for entry in companion:
+            if not isinstance(entry, dict):
+                continue
+            category = entry.get("category")
+            seq = entry.get("sequence")
+            if not isinstance(category, str) or not isinstance(seq, list) or not seq:
+                continue
+            beats = _parse_beats(seq, valid_chars, valid_moods)
+            if len(beats) == len(seq):
+                store._companion.setdefault(category, []).append(beats)
+
         # Player-choice scenes: stored as raw dicts (non-standard structure).
         # Each has speaker/question/options[{text,codep,response}].
         choices = data.get("choices", []) if isinstance(data, dict) else []
@@ -403,6 +422,18 @@ class DialogueStore:
             return None
         rng = rng or random
         return rng.choices(self._reunions, k=1)[0]
+
+    def random_companion(self, category: str,
+                         rng: Optional[random.Random] = None
+                         ) -> Optional[List[DialogueBeat]]:
+        """Pick a random companion-mode line for the given app category
+        (coding/browsing/video/...). Returns None if no lines are configured
+        for that category — the caller treats that as silent."""
+        pool = self._companion.get(category)
+        if not pool:
+            return None
+        rng = rng or random
+        return rng.choices(pool, k=1)[0]
 
     def random_choice(self, rng: Optional[random.Random] = None) -> Optional[dict]:
         """Pick a random player-choice scene dict, or None if none configured.

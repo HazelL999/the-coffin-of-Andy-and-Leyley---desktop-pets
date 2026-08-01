@@ -15,6 +15,7 @@ import tkinter as tk
 import config
 import expressions
 import platform_utils
+import theme
 
 # UI + emoji fonts are chosen per-platform in config (shared across the app).
 _UI_FONT = config.UI_FONT
@@ -32,7 +33,7 @@ class Pet:
                  on_partner_freeze=None, on_drag_onto_partner=None,
                  on_poked=None, on_check_state=None, on_summon_altar=None,
                  on_open_backpack=None, on_set_city=None, on_ai_chat=None,
-                 on_toggle_music=None):
+                 on_toggle_music=None, on_toggle_companion=None):
         self.character = character
         self.loader = loader
         self.dialogue = dialogue_store
@@ -50,6 +51,7 @@ class Pet:
         self.on_set_city = on_set_city  # right-click "Set city" (weather) handler
         self.on_ai_chat = on_ai_chat  # right-click "AI chat…" handler
         self.on_toggle_music = on_toggle_music  # right-click "Music on/off" handler
+        self.on_toggle_companion = on_toggle_companion  # right-click "Companion mode"
         self.partner_ref = None   # the other pet (set by PetApp after both start)
         self.codep = None         # CodependencyState (set by PetApp)
 
@@ -63,6 +65,13 @@ class Pet:
         self.current_mood = "neutral"
         self.movement_enabled = True   # toggled by Settings menu
         self.speaking_enabled = True   # toggled by Settings menu
+
+        # Companion mode: parks the pet at a fixed anchor (bottom-right) with
+        # a gentle sine float; movement/wander are muted while on. PetApp owns
+        # the toggle and sets the anchor + a per-pet float phase offset.
+        self.companion_mode = False
+        self._comp_anchor = None    # (x, y) sprite top-left rest position
+        self._comp_phase = 0.0      # float phase offset (radians)
 
         # Animation
         self.current_frameset = None
@@ -367,6 +376,13 @@ class Pet:
         if now < self._frozen_until:
             self._move_window()
             return
+        # Companion mode: parked at the bottom-right anchor with a gentle float.
+        # No wander, no wander-target walk, no sleep accumulation. Still
+        # repositions the window each frame so the float shows.
+        if self.companion_mode:
+            self._update_companion(dt)
+            self._move_window()
+            return
         # Movement toggled off: stop in place — no wandering steps, no
         # idle-timer expiring into a wander. Sleep/wake, animation, and
         # window refresh still run so the pet keeps its face and stays
@@ -430,6 +446,7 @@ class Pet:
         """If currently overlapping the partner and it's safe to move, slide
         this pet's position out to MIN_PARTNER_DISTANCE along the join line."""
         if (not self.partner_ref or self._drag_data
+                or self.companion_mode
                 or self.state == self.STATE_SLEEPING
                 or self.state == self.STATE_WANDERING):
             return
@@ -451,7 +468,12 @@ class Pet:
           Ashley 00-10:  merely idle -> sleeps.
         Outside the window the accumulator resets and they never sleep. A
         sleeping pet wakes when its wake condition trips (Andy: Ashley moves
-        away; both: poked / spoken to)."""
+        away; both: poked / spoken to). Companion mode never sleeps — the pet
+        is parked and should stay present."""
+        if self.companion_mode:
+            if self.state == self.STATE_SLEEPING:
+                self._wake_up()
+            return
         if not self._in_sleep_window():
             # Out of bedtime for this character: no accumulating, and wake if
             # somehow still asleep (e.g. window just ended).
@@ -668,6 +690,43 @@ class Pet:
     def unfreeze(self):
         """Clear any active movement freeze (e.g. when the user drags)."""
         self._frozen_until = -math.inf
+
+    # ---------- companion mode ----------
+    def _update_companion(self, dt):
+        """Park at the companion anchor with a gentle sine float (both x and y,
+        phase-offset per pet so the two don't bob in lockstep). No wander, no
+        walking toward a target — the anchor is set once when the mode turns on."""
+        if self._comp_anchor is None:
+            return
+        self._comp_phase += dt * (2 * math.pi / config.COMPANION_FLOAT_PERIOD)
+        amp = config.COMPANION_FLOAT_AMP
+        ax, ay = self._comp_anchor
+        self.x = ax + math.sin(self._comp_phase) * amp
+        self.y = ay + math.cos(self._comp_phase * 0.7) * amp
+        size = config.PLACEHOLDER_SIZE
+        self._clamp_position(size)
+        self.state = self.STATE_IDLE
+
+    def set_companion_mode(self, on, anchor=None, phase=0.0):
+        """Turn companion mode on (park at anchor, float phase) or off (resume
+        free movement). When turning off, leave x/y where they are so the pet
+        resumes wandering from its parked spot."""
+        self.companion_mode = on
+        if on:
+            self._comp_anchor = anchor
+            self._comp_phase = phase
+            self.state = self.STATE_IDLE
+            self.target_x, self.target_y = self.x, self.y
+        else:
+            self._comp_anchor = None
+            self.state = self.STATE_IDLE
+            self.idle_timer = self.rng.uniform(*config.IDLE_PAUSE_RANGE)
+
+    def _toggle_companion(self):
+        """Right-click "Companion mode" handler — delegates to PetApp so it can
+        coordinate both pets (anchors them side by side and start the observer)."""
+        if self.on_toggle_companion:
+            self.on_toggle_companion(self)
 
     def set_distance_band(self, band):
         """Set the inter-pet distance band; biases idle moods and dialogue
@@ -906,7 +965,7 @@ class Pet:
 
     # ---------- context menu ----------
     def _on_context(self, event):
-        menu = tk.Menu(self.win, tearoff=0)
+        menu = theme.style_menu(tk.Menu(self.win, tearoff=0))
         if self.on_check_state:
             menu.add_command(label="Check state",
                              command=lambda: self.on_check_state(self))
@@ -919,9 +978,12 @@ class Pet:
         if self.on_ai_chat:
             menu.add_command(label="AI chat…",
                              command=lambda: self.on_ai_chat(self))
+        if self.on_toggle_companion:
+            menu.add_command(label="Companion mode: On/Off",
+                             command=self._toggle_companion)
 
         # --- Settings submenu ---
-        settings = tk.Menu(menu, tearoff=0)
+        settings = theme.style_menu(tk.Menu(menu, tearoff=0))
         if self.on_set_city:
             settings.add_command(label="Set city…",
                                 command=self.on_set_city)

@@ -17,11 +17,12 @@ import tkinter as tk
 
 import ai_chat
 import config
+import theme
 import user_settings
 from PIL import Image, ImageTk
 
 _SPRITE_SIZE = config.PLACEHOLDER_SIZE  # 128 — matches the desktop pet sprite
-_BG = (0x1a, 0x1a, 0x1e)  # dialog background, matched to win.config(bg=)
+_BG = (0x14, 0x14, 0x14)  # dialog background RGB, matched to theme.BG for sprite compositing
 
 
 class _ImageCache:
@@ -113,7 +114,7 @@ def open_ai_dialog(root, pet, director=None):
     win.title("AI chat")
     win.attributes("-topmost", True)
     win.resizable(False, False)
-    win.config(bg="#1a1a1e")
+    win.config(bg=theme.BG)
 
     cache = _ImageCache(pet)
     busy = {"on": False}
@@ -136,7 +137,7 @@ def open_ai_dialog(root, pet, director=None):
 
     # --- canvas (top): scene image OR sprite+bubble share this surface ---
     canvas = tk.Canvas(win, width=img_w, height=img_h, bd=0,
-                       highlightthickness=0, bg="#1a1a1e")
+                       highlightthickness=0, bg=theme.BG)
     canvas.pack(padx=10, pady=(8, 4))
     # One scene-image item (shown in scene mode, hidden in sprite mode) + one
     # sprite-image item (shown in sprite mode). Bubble items are created/cleared
@@ -200,7 +201,7 @@ def open_ai_dialog(root, pet, director=None):
         # Measure text via a hidden Label (wrap at canvas width minus padding).
         wrap = img_w - 48
         meas = tk.Label(win, text=text, font=(config.UI_FONT, 10), justify="left",
-                        wraplength=wrap - 24)
+                        wraplength=wrap - 24, bg=theme.BG, fg=theme.FG)
         meas.update_idletasks()
         tw, th = meas.winfo_reqwidth(), meas.winfo_reqheight()
         pad_x, pad_y, radius = 12, 8, 14
@@ -254,12 +255,14 @@ def open_ai_dialog(root, pet, director=None):
         win.after(1500, _switch_to_sprite)
 
     # --- character buttons (placed under each portrait's center) ---
-    btns = tk.Frame(win, bg="#1a1a1e", height=btn_h)
+    btns = tk.Frame(win, bg=theme.BG, height=btn_h)
     btns.pack(fill="x", padx=10, pady=(0, 4))
-    btn_andrew = tk.Button(btns, text="Talk to Andrew", width=16,
-                           command=lambda: select("andrew"))
-    btn_ashley = tk.Button(btns, text="Talk to Ashley", width=16,
-                           command=lambda: select("ashley"))
+    btn_andrew = theme.style_button(
+        tk.Button(btns, text="Talk to Andrew", width=16,
+                  command=lambda: select("andrew")))
+    btn_ashley = theme.style_button(
+        tk.Button(btns, text="Talk to Ashley", width=16,
+                  command=lambda: select("ashley")))
     btn_andrew.place(anchor="center", relx=0.70, rely=0.5)
     btn_ashley.place(anchor="center", relx=0.30, rely=0.5)
 
@@ -313,17 +316,23 @@ def open_ai_dialog(root, pet, director=None):
 
         threading.Thread(target=worker, daemon=True).start()
 
-    bar = tk.Frame(win, bg="#1a1a1e")
+    bar = tk.Frame(win, bg=theme.BG)
     bar.pack(fill="x", padx=10, pady=(4, 8))
-    entry = tk.Entry(bar, font=(config.UI_FONT, 10))
+    entry = tk.Entry(bar, font=(config.UI_FONT, 10),
+                     bg=theme.BG_ELEVATED, fg=theme.FG,
+                     insertbackground=theme.FG, relief="flat", bd=0,
+                     highlightthickness=1, highlightbackground=theme.BORDER)
     entry.pack(side="left", fill="x", expand=True)
-    btn = tk.Button(bar, text="Say it", width=10, command=do_request)
+    btn = theme.style_button(
+        tk.Button(bar, text="Say it", width=10, command=do_request))
     btn.pack(side="left", padx=(4, 2))
-    tk.Button(bar, text="⚙", width=2,
-              command=lambda: _open_settings(root, status)).pack(side="left", padx=2)
+    theme.style_button(
+        tk.Button(bar, text="⚙", width=2,
+                  command=lambda: _open_settings(root, status))
+    ).pack(side="left", padx=2)
     status = tk.Label(bar,
                       text="Pick a character above, then type below.",
-                      font=(config.UI_FONT, 8), fg="#888", bg="#1a1a1e")
+                      font=(config.UI_FONT, 8), fg=theme.FG_DIM, bg=theme.BG)
     status.pack(side="left", padx=6)
 
     entry.bind("<Return>", do_request)
@@ -341,24 +350,30 @@ def _open_settings(root, status_label):
     w.geometry("420x200")
     w.attributes("-topmost", True)
     w.resizable(False, False)
-    w.config(bg="#2b2d33")
+    w.config(bg=theme.BG_ELEVATED)
 
     tk.Label(w, text="OpenRouter API key", font=(config.UI_FONT, 9, "bold"),
-             fg="#e0e0e0", bg="#2b2d33").pack(pady=(10, 2), anchor="w", padx=14)
-    key_entry = tk.Entry(w, width=52, font=(config.UI_FONT, 9), show="*")
+             fg=theme.FG, bg=theme.BG_ELEVATED).pack(pady=(10, 2), anchor="w", padx=14)
+    key_entry = tk.Entry(w, width=52, font=(config.UI_FONT, 9), show="*",
+                         bg=theme.BG, fg=theme.FG, insertbackground=theme.FG,
+                         relief="flat", bd=0, highlightthickness=1,
+                         highlightbackground=theme.BORDER)
     key_entry.pack(padx=14)
     cur = user_settings.get_ai_key()
     if cur:
         key_entry.insert(0, cur)
 
     tk.Label(w, text="Model (free models end in :free)",
-             font=(config.UI_FONT, 9, "bold"), fg="#e0e0e0", bg="#2b2d33") \
+             font=(config.UI_FONT, 9, "bold"), fg=theme.FG, bg=theme.BG_ELEVATED) \
         .pack(pady=(8, 2), anchor="w", padx=14)
-    model_entry = tk.Entry(w, width=52, font=(config.UI_FONT, 9))
+    model_entry = tk.Entry(w, width=52, font=(config.UI_FONT, 9),
+                           bg=theme.BG, fg=theme.FG, insertbackground=theme.FG,
+                           relief="flat", bd=0, highlightthickness=1,
+                           highlightbackground=theme.BORDER)
     model_entry.pack(padx=14)
     model_entry.insert(0, user_settings.get_ai_model())
 
-    info = tk.Label(w, text="", font=(config.UI_FONT, 8), fg="#ffd24a", bg="#2b2d33",
+    info = tk.Label(w, text="", font=(config.UI_FONT, 8), fg=theme.ACCENT, bg=theme.BG_ELEVATED,
                     wraplength=380, justify="left")
     info.pack(pady=(6, 4), padx=14)
 
@@ -368,4 +383,5 @@ def _open_settings(root, status_label):
         info.config(text="Saved. Get a free key at openrouter.ai/keys")
         status_label.config(text=status_label.cget("text"))
 
-    tk.Button(w, text="Save", width=10, command=save).pack(pady=6)
+    theme.style_button(
+        tk.Button(w, text="Save", width=10, command=save)).pack(pady=6)

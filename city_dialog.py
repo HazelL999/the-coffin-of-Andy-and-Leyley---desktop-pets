@@ -17,6 +17,7 @@ import urllib.parse
 import urllib.request
 
 import config
+import theme
 import user_settings
 
 
@@ -31,14 +32,17 @@ def open_city_dialog(root, on_chosen=None):
     win.geometry("360x300")
     win.attributes("-topmost", True)
     win.resizable(False, False)
-    win.config(bg="#2b2d33")
+    win.config(bg=theme.BG_ELEVATED)
 
     tk.Label(win, text="Weather city", font=(config.UI_FONT, 11, "bold"),
-             fg="#e0e0e0", bg="#2b2d33").pack(pady=(10, 4))
+             fg=theme.FG, bg=theme.BG_ELEVATED).pack(pady=(10, 4))
 
-    row = tk.Frame(win, bg="#2b2d33")
+    row = tk.Frame(win, bg=theme.BG_ELEVATED)
     row.pack(pady=(0, 6))
-    entry = tk.Entry(row, width=22, font=(config.UI_FONT, 10))
+    entry = tk.Entry(row, width=22, font=(config.UI_FONT, 10),
+                     bg=theme.BG, fg=theme.FG, insertbackground=theme.FG,
+                     relief="flat", bd=0, highlightthickness=1,
+                     highlightbackground=theme.BORDER)
     entry.pack(side="left", padx=(10, 4))
     entry.focus_set()
 
@@ -48,10 +52,13 @@ def open_city_dialog(root, on_chosen=None):
         entry.insert(0, cur)
 
     listbox = tk.Listbox(win, height=8, font=(config.UI_FONT, 9),
-                        bg="#1e2026", fg="#e0e0e0", selectbackground="#3a3f4a")
+                        bg=theme.BG, fg=theme.FG,
+                        selectbackground=theme.SELECT, selectforeground=theme.FG,
+                        relief="flat", bd=0, highlightthickness=1,
+                        highlightbackground=theme.BORDER)
     listbox.pack(fill="both", expand=True, padx=10)
     status = tk.Label(win, text="", font=(config.UI_FONT, 8),
-                     fg="#888", bg="#2b2d33")
+                     fg=theme.FG_DIM, bg=theme.BG_ELEVATED)
     status.pack(pady=(4, 8))
 
     _candidates = []  # parallel to listbox rows
@@ -96,10 +103,13 @@ def open_city_dialog(root, on_chosen=None):
         if on_chosen:
             on_chosen(city, lat, lon)
 
-    btn = tk.Button(win, text="Search", width=9, command=do_search)
+    btn = theme.style_button(
+        tk.Button(win, text="Search", width=9, command=do_search))
     btn.pack(side="left", padx=(12, 4), pady=4)
-    tk.Button(win, text="Save", width=9, command=do_save).pack(side="left", padx=4)
-    tk.Button(win, text="Close", width=9, command=win.destroy).pack(side="left", padx=4)
+    theme.style_button(
+        tk.Button(win, text="Save", width=9, command=do_save)).pack(side="left", padx=4)
+    theme.style_button(
+        tk.Button(win, text="Close", width=9, command=win.destroy)).pack(side="left", padx=4)
 
     win.bind("<Return>", lambda e: (do_search() if not listbox.curselection()
                                     and listbox.size() == 0 else do_save()))
