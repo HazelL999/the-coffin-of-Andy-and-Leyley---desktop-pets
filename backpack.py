@@ -54,9 +54,6 @@ class Backpack:
         # clearly a UI surface, not a transparent sprite.
         self.win.config(bg="#2b2d33")
 
-        tk.Label(self.win, text="Backpack", font=(config.UI_FONT, 10, "bold"),
-                 fg="#e0e0e0", bg="#2b2d33").pack(pady=(4, 2))
-
         frame = tk.Frame(self.win, bg="#2b2d33")
         frame.pack()
 

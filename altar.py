@@ -94,6 +94,15 @@ class Altar:
         self.canvas.pack()
         self._draw_altar()
         self._move_window()
+        # On macOS a newly summoned window doesn't become the key window, so
+        # two-finger tap / double-click events route to the pet (the existing
+        # key window) and open the PET menu, not the altar menu. Lift + focus
+        # so the altar is the active target for events.
+        try:
+            self.win.lift()
+            self.win.focus_force()
+        except tk.TclError:
+            pass
         # drag + context menu
         self.canvas.bind("<Button-1>", self._on_drag_start)
         self.canvas.bind("<B1-Motion>", self._on_drag_motion)
