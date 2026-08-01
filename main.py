@@ -438,11 +438,15 @@ class PetApp:
         self.inter_btn.pack(side="left", padx=3)
 
         if platform_utils.is_macos():
-            self.click_through_on = False
-            self.ct_btn = theme.style_button(
-                tk.Button(self.panel, text="Click-through: OFF", width=18,
-                          command=self._toggle_click_through))
-            self.ct_btn.pack(pady=4)
+            # No "Click-through" button on macOS: Mac pets receive clicks via
+            # per-pixel transparency (the sprite's opaque pixels hit-test),
+            # so there's nothing to toggle. The set_click_through helper is
+            # only used by the full-screen bond-line overlay (which must NOT
+            # swallow desktop clicks), not by the pets themselves. Show the
+            # same hint label as Windows instead.
+            tk.Label(self.panel, text="Right-click a pet for more",
+                     font=(config.UI_FONT, 8),
+                     fg=theme.FG_DIM, bg=theme.BG).pack(pady=(2, 0))
         else:
             # Position hint label instead.
             tk.Label(self.panel, text="Right-click a pet for more",
@@ -466,13 +470,6 @@ class PetApp:
         self.interaction_on = not self.interaction_on
         self.director.enabled = self.interaction_on
         self.inter_btn.config(text="Interact: ON" if self.interaction_on else "Interact: OFF")
-
-    def _toggle_click_through(self):
-        self.click_through_on = not self.click_through_on
-        for pet in self.pets:
-            platform_utils.set_click_through(pet.win, self.click_through_on)
-        self.ct_btn.config(text="Click-through: ON" if self.click_through_on
-                           else "Click-through: OFF")
 
     def _init_bond_window(self):
         """A full-screen, transparent, click-through overlay that draws a faint

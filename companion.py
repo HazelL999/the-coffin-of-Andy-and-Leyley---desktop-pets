@@ -55,20 +55,36 @@ def _foreground_win():
 
 
 def _foreground_mac():
-    """NSWorkspace.frontmostApplication().localizedName(). No-op (returns
-    None) if PyObjC isn't available — consistent with platform_utils."""
+    """Frontmost app name on macOS. Tries NSWorkspace.frontmostApplication
+    first; falls back to scanning runningApplications for the first regular
+    (GUI) app if frontmostApplication returns None (it can, e.g. right after
+    focus changes). No-op (returns None) if PyObjC isn't available."""
     try:
         import AppKit
     except Exception:
         return None
     try:
-        app = AppKit.NSWorkspace.sharedWorkspace().frontmostApplication()
-        if app is None:
-            return None
-        name = app.localizedName()
-        return name.lower().strip() if name else None
+        ws = AppKit.NSWorkspace.sharedWorkspace()
+        app = ws.frontmostApplication()
+        if app is not None:
+            name = app.localizedName()
+            if name:
+                return str(name).lower().strip() or None
+        # Fallback: first regular-activation-policy running app. The list is
+        # ordered by recency on recent macOS, so the head is usually the
+        # frontmost GUI app even when frontmostApplication() returns nil.
+        NSRegular = 0  # NSApplicationActivationPolicyRegular
+        for a in ws.runningApplications() or []:
+            try:
+                if a.activationPolicy() == NSRegular:
+                    name = a.localizedName()
+                    if name:
+                        return str(name).lower().strip() or None
+            except Exception:
+                continue
     except Exception:
         return None
+    return None
 
 
 # --- categorization ---
