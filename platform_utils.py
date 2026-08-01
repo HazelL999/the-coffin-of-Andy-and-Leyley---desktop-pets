@@ -157,7 +157,7 @@ def set_click_through(win, on):
         pass
 
 
-def bind_context_menu(win, handler):
+def bind_context_menu(win, handler, canvas=None):
     """Bind right-click cross-platform to call handler(event).
 
     Windows/Linux: Button-3. macOS: Button-2 and Ctrl-Button-1, PLUS
@@ -166,12 +166,25 @@ def bind_context_menu(win, handler):
     is the most discoverable way to open the menu. The double-click also
     fires two Button-1 events (counted as pokes), but stays under the rage
     threshold of 3, so it won't spuriously trigger the anger reaction.
+
+    On macOS, if `canvas` is given, also bind the same events to it: the
+    sprite NSView sublayer can intercept rightMouseDown at the win level,
+    but Canvas-level bindings still fire (the Canvas is the hit-test target
+    when the sublayer is positioned below it), so binding the Canvas too
+    makes two-finger tap / Ctrl-click reach the menu reliably.
     """
     win.bind("<Button-3>", handler)
     if is_macos():
         win.bind("<Button-2>", handler)
         win.bind("<Control-Button-1>", handler)
         win.bind("<Double-Button-1>", handler)
+        if canvas is not None:
+            # Canvas-level bindings fire even when a sublayer interferes
+            # with win-level right-click delivery.
+            canvas.bind("<Button-2>", handler)
+            canvas.bind("<Control-Button-1>", handler)
+            canvas.bind("<Double-Button-1>", handler)
+
 
 
 # ---------------------------------------------------------------------------

@@ -189,7 +189,8 @@ class Pet:
         self._build_bubble()
 
         # Bindings
-        platform_utils.bind_context_menu(self.win, self._on_context)
+        platform_utils.bind_context_menu(self.win, self._on_context,
+                                         canvas=self.canvas)
         self.canvas.bind("<Button-1>", self._on_drag_start)
         self.canvas.bind("<B1-Motion>", self._on_drag_motion)
         self.canvas.bind("<ButtonRelease-1>", self._on_drag_end)
