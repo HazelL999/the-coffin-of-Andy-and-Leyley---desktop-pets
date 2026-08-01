@@ -373,6 +373,18 @@ class Pet:
         if now < self._frozen_until:
             self._move_window()
             return
+        # Movement toggled off: stop in place — no wandering steps, no
+        # idle-timer expiring into a wander. Sleep/wake, animation, and
+        # window refresh still run so the pet keeps its face and stays
+        # draggable. State is forced to IDLE so any in-progress walk ends.
+        if not self.movement_enabled:
+            size = config.PLACEHOLDER_SIZE
+            self.state = self.STATE_IDLE
+            self._update_sleep(dt)
+            self._push_apart_from_partner()
+            self._clamp_position(size)
+            self._move_window()
+            return
         # Sleeping: hold still (Andy sleeps pressed to Ashley). Wake checks
         # are in _update_sleep; here we just don't move.
         if self.state == self.STATE_SLEEPING:
