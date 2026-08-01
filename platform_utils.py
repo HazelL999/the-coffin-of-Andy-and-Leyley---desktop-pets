@@ -173,3 +173,176 @@ def bind_context_menu(win, handler):
         win.bind("<Button-2>", handler)
         win.bind("<Control-Button-1>", handler)
         win.bind("<Double-Button-1>", handler)
+
+
+# ---------------------------------------------------------------------------
+# macOS sprite bridge (variant 1a)
+#
+# On macOS, Tk's create_image is zeroed by kCGBlendModeSourceAtop on
+# -transparent windows (backing alpha=0 => result alpha always 0). Canvas
+# native shapes (oval/polygon/line/text) still draw fine. So we keep Tk
+# Toplevel/Canvas/after/bind intact and draw sprites on a transparent NSView
+# sublayer of the Tk window's contentView, using NSImage (source-over, not
+# SourceAtop). The sublayer's hitTest_ returns nil so mouse events fall
+# through to the Tk Canvas — drag/poke keep working over the sprite.
+#
+# Verified by mac_gate_test.py: NSImage visible on transparent TKWindow, and
+# clicks on the image region still trigger Tk Canvas <Button-1>.
+# ---------------------------------------------------------------------------
+
+def _mac_pyobjc_available():
+    """True if pyobjc-framework-Cocoa (AppKit) is importable on macOS."""
+    if not is_macos():
+        return False
+    try:
+        import AppKit  # noqa: F401
+        import objc  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+def pil_to_nsimage(pil_rgba):
+    """PIL RGBA Image -> NSImage, preserving per-pixel alpha. macOS only.
+    Returns None if PyObjC is unavailable or the conversion fails."""
+    if not _mac_pyobjc_available():
+        return None
+    try:
+        import io
+        import AppKit
+        buf = io.BytesIO()
+        pil_rgba.save(buf, format="PNG")
+        raw = buf.getvalue()
+        data = AppKit.NSData.dataWithBytes_length_(raw, len(raw))
+        return AppKit.NSImage.alloc().initWithData_(data)
+    except Exception:
+        return None
+
+
+if _mac_pyobjc_available():
+    import AppKit as _AppKit
+    import objc as _objc
+
+    class _SpriteLayer(_AppKit.NSView):
+        """A transparent NSView that draws one NSImage; click-through.
+
+        hitTest_ returns None so the view never claims mouse events — they
+        fall through to the Tk Canvas underneath, keeping Tk's <Button-1>
+        drag/poke bindings working over the sprite area.
+        """
+
+        def initWithFrame_image_(self, frame, image):
+            self = _objc.super(_SpriteLayer, self).initWithFrame_(frame)
+            if self is None:
+                return None
+            self._image = image
+            return self
+
+        def setImage_(self, image):
+            self._image = image
+            self.setNeedsDisplay_(True)
+
+        def drawRect_(self, rect):
+            if self._image:
+                self._image.drawInRect_fromRect_operation_fraction_(
+                    self.bounds(), _AppKit.NSZeroRect,
+                    _AppKit.NSCompositeSourceOver, 1.0)
+
+        def hitTest_(self, point):
+            # Click-through: never claim the event. Lets Tk Canvas receive it.
+            return None
+
+
+def _resolve_ns_window(tk_win):
+    """Find the NSWindow backing a Tk Toplevel on macOS.
+
+    winfo_id() returns Tk's internal id, not the NSWindow windowNumber, so
+    windowWithWindowNumber_ returns None. Fall back to orderedWindows() and
+    match by frame size/origin (the Tk Toplevel's geometry). Returns the
+    NSWindow (a TKWindow subclass) or None.
+    """
+    if not _mac_pyobjc_available():
+        return None
+    try:
+        ns_app = _AppKit.NSApplication.sharedApplication()
+        # Tk Toplevels appear in orderedWindows() as TKWindow instances.
+        target_w = tk_win.winfo_width()
+        target_h = tk_win.winfo_height()
+        # Tk geometry "+x+y" is top-left; Cocoa frame origin is bottom-left.
+        # Match by size (most reliable — two pets differ by position not size,
+        # but each call resolves after that pet's own window is mapped).
+        best = None
+        for w in ns_app.orderedWindows() or []:
+            f = w.frame()
+            if abs(f.size.width - target_w) < 2 and abs(f.size.height - target_h) < 2:
+                best = w
+                break
+        return best
+    except Exception:
+        return None
+
+
+class MacSpriteBridge:
+    """Manages one NSView sprite sublayer on a Tk Toplevel's NSWindow.
+
+    attach() must be called after the Tk window is mapped (update_idletasks +
+    a short delay) so winfo_width/height and the NSWindow exist. update_image()
+    swaps the NSImage and triggers a redraw. detach() removes the sublayer.
+
+    All methods are no-ops (attach returns False) if PyObjC is unavailable,
+    so callers can fall back to canvas.create_image without crashing.
+    """
+
+    def __init__(self):
+        self._layer = None
+        self._ns_win = None
+
+    def attach(self, tk_win, width, height, x=0, y=0):
+        """Attach a sprite sublayer to tk_win's NSWindow. Returns True on
+        success, False if PyObjC missing or the NSWindow can't be resolved."""
+        if not _mac_pyobjc_available():
+            return False
+        ns_win = _resolve_ns_window(tk_win)
+        if ns_win is None:
+            return False
+        content = ns_win.contentView()
+        if content is None:
+            return False
+        # Cocoa origin is bottom-left; callers pass Tk-style top-left offsets.
+        # For a sprite centered in the window we compute from the content height.
+        try:
+            ch = content.bounds().size.height
+        except Exception:
+            ch = height
+        frame = _AppKit.NSMakeRect(x, ch - y - height, width, height)
+        self._layer = _SpriteLayer.alloc().initWithFrame_image_(frame, None)
+        if self._layer is None:
+            return False
+        content.addSubview_(self._layer)
+        self._ns_win = ns_win
+        return True
+
+    def update_image(self, nsimage):
+        """Swap the sprite's NSImage (triggers redraw). No-op if not attached."""
+        if self._layer is not None:
+            self._layer.setImage_(nsimage)
+
+    def set_frame(self, x, y, width, height):
+        """Move/resize the sprite sublayer (Tk top-left origin)."""
+        if self._layer is None:
+            return
+        try:
+            content = self._ns_win.contentView()
+            ch = content.bounds().size.height
+            self._layer.setFrame_(_AppKit.NSMakeRect(x, ch - y - height, width, height))
+        except Exception:
+            pass
+
+    def detach(self):
+        if self._layer is not None:
+            try:
+                self._layer.removeFromSuperview()
+            except Exception:
+                pass
+            self._layer = None
+        self._ns_win = None

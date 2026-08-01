@@ -55,7 +55,12 @@ class VisionWindow:
         # Bake over transparent color for Windows (no fringe).
         if platform_utils.is_windows():
             im = _bake_for_windows(im, config.hex_to_rgb(config.TRANSPARENT_COLOR))
-        self._photo = ImageTk.PhotoImage(im)
+            self._photo = ImageTk.PhotoImage(im)
+        else:
+            # macOS: keep the RGBA PIL image for the NSImage bridge (Tk's
+            # create_image is zeroed by SourceAtop on transparent windows).
+            self._photo = None
+            self._pil = im
 
         self.win = tk.Toplevel(self.root)
         platform_utils.setup_window(self.win, config.TRANSPARENT_COLOR)
@@ -65,8 +70,26 @@ class VisionWindow:
                            bd=0, highlightthickness=0,
                            bg=platform_utils.transparent_bg(config.TRANSPARENT_COLOR))
         canvas.pack()
-        canvas.create_image(new_w // 2, new_h // 2, image=self._photo,
-                            anchor="center")
+
+        # macOS sprite bridge (variant 1a): draw via NSImage on an NSView
+        # sublayer; Windows/Linux use canvas.create_image.
+        self._mac_sprite = None
+        if (platform_utils.is_macos()
+                and platform_utils._mac_pyobjc_available()):
+            self._mac_sprite = platform_utils.MacSpriteBridge()
+            nsimg = platform_utils.pil_to_nsimage(self._pil)
+            # Attach after the window maps; draw centered.
+            self.win.update_idletasks()
+            if self._mac_sprite.attach(self.win, new_w, new_h, 0, 0):
+                self._mac_sprite.update_image(nsimg)
+            else:
+                # Bridge failed (no NSWindow yet) — retry once after mapping.
+                self.win.after(80, lambda: (
+                    self._mac_sprite.attach(self.win, new_w, new_h, 0, 0)
+                    and self._mac_sprite.update_image(nsimg)))
+        else:
+            canvas.create_image(new_w // 2, new_h // 2, image=self._photo,
+                                 anchor="center")
         # Click anywhere to close.
         canvas.bind("<Button-1>", lambda e: self._close())
         # Auto-close after a few seconds.
@@ -78,6 +101,9 @@ class VisionWindow:
                 self.win.after_cancel(self._close_after_id)
             except Exception:
                 pass
+        if self._mac_sprite is not None:
+            self._mac_sprite.detach()
+            self._mac_sprite = None
         if self.win:
             try:
                 self.win.destroy()

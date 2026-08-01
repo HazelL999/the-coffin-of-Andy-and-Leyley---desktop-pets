@@ -21,15 +21,29 @@ import platform_utils
 class FrameSet:
     """Frames for one (character, mood). Animated if len > 1."""
 
-    def __init__(self, face_right, face_left, frame_durations, is_placeholder):
+    def __init__(self, face_right, face_left, frame_durations, is_placeholder,
+                 pil_right=None, pil_left=None):
         # Lists of ImageTk.PhotoImage; keep strong refs alive.
         self.face_right = face_right
         self.face_left = face_left
         self.frame_durations = frame_durations  # ms per frame
         self.is_placeholder = is_placeholder
+        # On macOS the PhotoImage path is broken on transparent windows
+        # (Tk's XPutImage SourceAtop zeroes it), so the pet draws sprites via
+        # an NSView/NSImage bridge instead. Store the source PIL RGBA images
+        # too (Mac only) so the bridge can convert PIL -> NSImage. Windows
+        # leaves these None (unused).
+        self.pil_right = pil_right
+        self.pil_left = pil_left
 
     def frames(self, facing):
         return self.face_right if facing == "right" else self.face_left
+
+    def pil_frames(self, facing):
+        """Source PIL RGBA frames for the macOS NSImage bridge. None on Windows."""
+        if facing == "right":
+            return self.pil_right
+        return self.pil_left
 
     def __len__(self):
         return len(self.face_right)
@@ -177,7 +191,10 @@ def _to_photoimages(pil_imgs, transparent_rgb, bake_windows):
     """
     right = []
     left = []
+    pil_right = []   # source PIL RGBA, for the macOS NSImage bridge
+    pil_left = []
     durations = []
+    is_mac = platform_utils.is_macos()
     for im, dur in pil_imgs:
         if bake_windows:
             # Bake once, then flip the baked result: alpha binarization +
@@ -191,8 +208,13 @@ def _to_photoimages(pil_imgs, transparent_rgb, bake_windows):
             im_l = _flip(im_r)
         right.append(ImageTk.PhotoImage(im_r))
         left.append(ImageTk.PhotoImage(im_l))
+        if is_mac:
+            pil_right.append(im_r)
+            pil_left.append(im_l)
         durations.append(dur)
-    return right, left, durations
+    if is_mac:
+        return right, left, durations, pil_right, pil_left
+    return right, left, durations, None, None
 
 
 class AssetLoader:
@@ -222,14 +244,16 @@ class AssetLoader:
             # placeholder — one frame, still gets facing flip (symmetric, no-op)
             ph = _make_placeholder(character, mood, config.PLACEHOLDER_SIZE,
                                    self.transparent_rgb, self.bake_windows)
-            right, left, durations = _to_photoimages(
+            right, left, durations, pil_r, pil_l = _to_photoimages(
                 [(ph, config.ANIM_FRAME_DEFAULT_MS)],
                 self.transparent_rgb, self.bake_windows)
-            fs = FrameSet(right, left, durations, is_placeholder=True)
+            fs = FrameSet(right, left, durations, is_placeholder=True,
+                          pil_right=pil_r, pil_left=pil_l)
         else:
-            right, left, durations = _to_photoimages(
+            right, left, durations, pil_r, pil_l = _to_photoimages(
                 frames, self.transparent_rgb, self.bake_windows)
-            fs = FrameSet(right, left, durations, is_placeholder=False)
+            fs = FrameSet(right, left, durations, is_placeholder=False,
+                          pil_right=pil_r, pil_left=pil_l)
 
         self._cache[key] = fs
         return fs

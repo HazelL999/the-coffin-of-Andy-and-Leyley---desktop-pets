@@ -144,9 +144,20 @@ class Pet:
         # window in _move_window so the sprite lands at (self.x, self.y).
         self.sprite_cx = self.win_w // 2
         self.sprite_cy = win_h - size // 2
-        self.image_item = self.canvas.create_image(
-            self.sprite_cx, self.sprite_cy, image=self._current_image(),
-            anchor="center")
+        # macOS sprite bridge: Tk's create_image is zeroed on transparent macOS
+        # windows (SourceAtop bug), so on Mac we draw the sprite on an NSView
+        # sublayer via NSImage instead. Windows/Linux keep canvas.create_image.
+        self._mac_sprite = None
+        self._is_mac_sprite = (platform_utils.is_macos()
+                               and platform_utils._mac_pyobjc_available())
+        if self._is_mac_sprite:
+            self._mac_sprite = platform_utils.MacSpriteBridge()
+            # create_image would be invisible on Mac; skip it. The bridge
+            # attaches once the window is mapped (see _attach_mac_sprite).
+        else:
+            self.image_item = self.canvas.create_image(
+                self.sprite_cx, self.sprite_cy, image=self._current_image(),
+                anchor="center")
         # Shadow under the sprite — a darkened ellipse whose opacity reflects
         # mental state (good = faint, bad = dark). Drawn BEFORE the sprite
         # so it sits underneath.
@@ -168,6 +179,12 @@ class Pet:
                                   max(y0 + m + 1, y1 - size - m))
         self._move_window()
 
+        # macOS: the sprite bridge can't attach until the NSWindow is mapped.
+        # Schedule a first _apply_sprite after the event loop spins, which
+        # gives _resolve_ns_window a mapped TKWindow to find.
+        if self._is_mac_sprite:
+            self.win.after(50, self._apply_sprite)
+
         # Speech bubble (hidden initially)
         self._build_bubble()
 
@@ -185,6 +202,40 @@ class Pet:
         if not frames:
             return None
         return frames[self.frame_index % len(frames)]
+
+    def _current_pil(self):
+        """Source PIL RGBA frame for the macOS NSImage bridge. None elsewhere."""
+        if self.current_frameset is None:
+            return None
+        pils = self.current_frameset.pil_frames(self.facing)
+        if not pils:
+            return None
+        return pils[self.frame_index % len(pils)]
+
+    def _apply_sprite(self):
+        """Show the current frame on the sprite, platform-routed.
+        Windows/Linux: canvas itemconfig the image_item. macOS: update the
+        NSImage on the NSView bridge sublayer (attach first if needed)."""
+        if self._is_mac_sprite:
+            if self._mac_sprite is None:
+                return
+            pil = self._current_pil()
+            if pil is None:
+                return
+            nsimg = platform_utils.pil_to_nsimage(pil)
+            if nsimg is None:
+                return
+            # Attach lazily on first frame (window is mapped by now).
+            if not getattr(self, "_mac_attached", False):
+                size = config.PLACEHOLDER_SIZE
+                ox = self.sprite_cx - size // 2
+                oy = self.sprite_cy - size // 2
+                if self._mac_sprite.attach(self.win, size, size, ox, oy):
+                    self._mac_attached = True
+            self._mac_sprite.update_image(nsimg)
+        else:
+            if self.image_item is not None:
+                self.canvas.itemconfig(self.image_item, image=self._current_image())
 
     def _build_bubble(self):
         # Rounded speech bubble drawn on the pet's own canvas. We create the
@@ -530,8 +581,7 @@ class Pet:
         if self.frame_accum_ms >= dur:
             self.frame_accum_ms = 0.0
             self.frame_index = (self.frame_index + 1) % len(frames)
-            if self.image_item is not None:
-                self.canvas.itemconfig(self.image_item, image=self._current_image())
+            self._apply_sprite()
 
     def _clamp_position(self, size):
         x0, y0, x1, y1 = self.bounds
@@ -632,8 +682,7 @@ class Pet:
         self.current_frameset = self.loader.load(self.character, mood)
         self.frame_index = 0
         self.frame_accum_ms = 0.0
-        if self.image_item is not None:
-            self.canvas.itemconfig(self.image_item, image=self._current_image())
+        self._apply_sprite()
         # Apply codependency delta for the new mood (small per-mood drift).
         if self.codep:
             delta = expressions.MOOD_CODEP_DELTA.get(mood, 0.0)
@@ -682,8 +731,7 @@ class Pet:
         if not frames:
             return
         self.frame_index = index % len(frames)
-        if self.image_item is not None:
-            self.canvas.itemconfig(self.image_item, image=self._current_image())
+        self._apply_sprite()
 
     def _do_transition_to_frame1(self):
         """Fire once: switch a transition mood from frame 0 (-1) to 1 (-2)."""
