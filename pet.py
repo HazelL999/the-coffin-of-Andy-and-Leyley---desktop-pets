@@ -131,7 +131,7 @@ class Pet:
         self.win.geometry(f"{self.win_w}x{win_h}")
         self.canvas = tk.Canvas(self.win, width=self.win_w, height=win_h,
                                 bd=0, highlightthickness=0,
-                                bg=config.TRANSPARENT_COLOR)
+                                bg=platform_utils.transparent_bg(config.TRANSPARENT_COLOR))
         self.canvas.pack()
 
         self.current_mood = "neutral"

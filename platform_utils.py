@@ -25,6 +25,27 @@ def is_macos():
     return sys.platform == "darwin"
 
 
+def transparent_bg(transparent_color):
+    """The bg color a transparent window's Toplevel AND its child widgets
+    (Canvas, etc.) should use so their background is truly see-through.
+
+    - Windows: the transparent color (magenta). -transparentcolor then punches
+      that exact color out as transparent + click-through.
+    - macOS: 'systemTransparent', a system color with alpha. macOS has no
+      -transparentcolor; -transparent True only *allows* the content area to be
+      transparent — the real transparency comes from the Toplevel (and every
+      child widget, or its solid bg covers the transparency) being set to a
+      color with alpha. 'systemTransparent' is the value Tk's wm man page
+      names for this. Using the Windows magenta here would show as a solid
+      magenta block (no color keying on macOS).
+    - Linux/other: the transparent color (no real transparency; sprites sit
+      on a magenta block — best effort).
+    """
+    if is_macos():
+        return "systemTransparent"
+    return transparent_color
+
+
 def setup_window(win, transparent_color):
     """Make a borderless, always-on-top, transparent Toplevel.
 
@@ -54,7 +75,11 @@ def setup_window(win, transparent_color):
             used = False
         if not used:
             _setup_mac_nswindow(win)    # PyObjC fallback (best-effort)
-        win.config(bg="")  # clear so alpha is honored
+        # Toplevel bg must be an alpha-bearing system color (NOT "" — Tk treats
+        # empty as the default grey, not transparent). Child widgets (Canvas)
+        # must use the same via transparent_bg(), or their solid bg covers the
+        # transparency. See transparent_bg() docstring.
+        win.config(bg=transparent_bg(transparent_color))
         return used
     else:  # Linux/other: best effort, no true transparency
         win.config(bg=transparent_color)

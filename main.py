@@ -444,7 +444,7 @@ class PetApp:
             win.geometry(f"{int(x1 - x0)}x{int(y1 - y0)}+{int(x0)}+{int(y0)}")
             canvas = tk.Canvas(win, width=int(x1 - x0), height=int(y1 - y0),
                                bd=0, highlightthickness=0,
-                               bg=config.TRANSPARENT_COLOR)
+                               bg=platform_utils.transparent_bg(config.TRANSPARENT_COLOR))
             canvas.pack()
             # The line must sit ABOVE normal app windows (so it isn't covered
             # when a browser/folder is on screen) but BELOW the pets (so the
@@ -616,11 +616,9 @@ class PetApp:
                 pass
         pet._click_reset_after_id = pet.win.after(
             int(config.CLICK_WINDOW_S * 1000), lambda: setattr(pet, "_click_count", 0))
-        # Andrew poked: nudge his codependency each poke (attention). Ashley
-        # poked: no per-poke nudge — the adjustment happens once on the
-        # _andrew_worried trigger (Andy +5, Ashley -2), see below.
-        if pet.character == "andrew":
-            self.codep.adjust("andrew", config.CODEP_CLICK_ANDREW_DELTA)
+        # No per-poke codependency nudge: both directions only adjust on the
+        # rage-threshold trigger (3 pokes). poke-Andrew -> _ashley_angers
+        # (Ashley -8), poke-Ashley -> _andrew_worried (Andy +5, Ashley -2).
         if pet._click_count >= config.CLICK_RAGE_THRESHOLD:
             pet._click_count = 0
             if pet.character == "andrew":

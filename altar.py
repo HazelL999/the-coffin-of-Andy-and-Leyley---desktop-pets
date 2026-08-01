@@ -90,7 +90,7 @@ class Altar:
         self.win_h = size
         self.canvas = tk.Canvas(self.win, width=size, height=size,
                                 bd=0, highlightthickness=0,
-                                bg=config.TRANSPARENT_COLOR)
+                                bg=platform_utils.transparent_bg(config.TRANSPARENT_COLOR))
         self.canvas.pack()
         self._draw_altar()
         self._move_window()

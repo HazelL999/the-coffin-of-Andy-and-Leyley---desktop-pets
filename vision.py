@@ -13,6 +13,8 @@ import os
 
 from PIL import Image, ImageTk
 
+import platform_utils
+
 
 class VisionWindow:
     """A transient popup showing one vision image."""
@@ -27,7 +29,6 @@ class VisionWindow:
 
     def show(self):
         import tkinter as tk
-        import platform_utils
         import config
         from asset_loader import _bake_for_windows
 
@@ -62,7 +63,7 @@ class VisionWindow:
         self.win.attributes("-topmost", True)
         canvas = tk.Canvas(self.win, width=new_w, height=new_h,
                            bd=0, highlightthickness=0,
-                           bg=config.TRANSPARENT_COLOR)
+                           bg=platform_utils.transparent_bg(config.TRANSPARENT_COLOR))
         canvas.pack()
         canvas.create_image(new_w // 2, new_h // 2, image=self._photo,
                             anchor="center")
