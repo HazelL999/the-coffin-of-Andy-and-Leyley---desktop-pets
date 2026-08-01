@@ -460,6 +460,14 @@ class PetApp:
             self._bond_canvas = canvas
             self._bond_line = None          # canvas item id, created lazily
             self._bond_visible = False      # whether the line is currently shown
+            # On macOS a transparent full-screen window still receives mouse
+            # events by default (no auto click-through like Windows'
+            # -transparentcolor). Without this it would swallow every desktop
+            # click, locking the whole screen. Set it once the window is mapped.
+            if platform_utils.is_macos():
+                def _make_click_through():
+                    platform_utils.set_click_through(self._bond_win, True)
+                win.after(100, _make_click_through)
         except Exception:
             # Bond visualization is purely cosmetic — never let it block startup.
             self._bond_win = None

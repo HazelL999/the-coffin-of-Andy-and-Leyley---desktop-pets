@@ -141,17 +141,16 @@ def screen_bounds(root, use_virtual_desktop=False):
 
 
 def set_click_through(win, on):
-    """macOS: toggle ignoring all mouse events. No-op on Windows (per-pixel)."""
+    """macOS: toggle ignoring all mouse events. No-op on Windows (per-pixel
+    click-through there comes from -transparentcolor). On macOS a transparent
+    window STILL receives mouse events by default — there's no auto
+    click-through for transparent regions — so a full-screen overlay (like
+    the bond line window) must call this with on=True or it swallows every
+    click on the desktop."""
     if not is_macos():
         return
     try:
-        import AppKit
-        import objc
-        win.update_idletasks()
-        # Bridge to the NSWindow: Tk's winfo_id on macOS is the window number.
-        # We grab the NSWindow via the shared application's windowWithWindowNumber:.
-        app = AppKit.NSApplication.sharedApplication()
-        ns_win = app.windowWithWindowNumber_(win.winfo_id())
+        ns_win = _resolve_ns_window(win)
         if ns_win is not None:
             ns_win.setIgnoresMouseEvents_(on)
     except Exception:
