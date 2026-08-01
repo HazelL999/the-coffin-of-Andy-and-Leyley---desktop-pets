@@ -103,7 +103,7 @@
     {"sequence": [
       {"character": "ashley", "mood": "indifferent", "text": "Who cares."},
       {"character": "andrew", "mood": "explaining", "text": "Well, I for one."},
-      {"character": "ashley", "mood": "happy",    "text": "Then that makes a grand total of one person who cares."}
+      {"character": "ashley", "mood": "cute",    "text": "Then that makes a grand total of one person who cares."}
     ]},
     {"sequence": [
       {"character": "andrew", "mood": "inlove", "text": "And thus, she forever keeps her mouth shut."},
@@ -222,7 +222,7 @@
     {"sequence": [
       {"character": "ashley", "mood": "furious", "text": "Where were you?"},
       {"character": "andrew", "mood": "indifferent", "text": "...Around."},
-      {"character": "ashley", "mood": "sinister", "text": "Around. I'll remember that."}
+      {"character": "ashley", "mood": "snort", "text": "Around. I'll remember that."}
     ]}
   ],
   "choices": [
@@ -230,8 +230,8 @@
       "speaker": "ashley",
       "question": "Andy... you'd never leave me, right?",
       "options": [
-        {"text": "Never.", "codep": {"andrew": 5, "ashley": 5}, "response": {"character": "andrew", "mood": "inlove", "text": "...Never."}},
-        {"text": "...", "codep": {"andrew": -3, "ashley": -8}, "response": {"character": "ashley", "mood": "furious", "text": "That hesitation. I heard it."}}
+        {"text": "Never.", "codep": {"andrew": 3, "ashley": 8}, "response": {"character": "andrew", "mood": "speechless", "text": "...Never."}},
+        {"text": "...", "codep": {"andrew": -3, "ashley": -5}, "response": {"character": "ashley", "mood": "unsatisfied", "text": "That hesitation. I heard it."}}
       ]
     },
     {
@@ -239,16 +239,32 @@
       "question": "Do you ever want to just... stop?",
       "options": [
         {"text": "Every day.", "codep": {"andrew": -5, "ashley": -5}, "response": {"character": "ashley", "mood": "crying", "text": "Don't say that. Not to me. Not ever."}},
-        {"text": "...Not yet.", "codep": {"andrew": 3, "ashley": 3}, "response": {"character": "ashley", "mood": "content", "text": "Good. Then we go on."}}
+        {"text": "Huh??", "codep": {"andrew": -8, "ashley": 0}, "response": {"character": "ashley", "mood": "are_u_serious", "text": "I don't understand."}}
       ]
     },
     {
       "speaker": "ashley",
       "question": "If someone tried to take me from you, what would you do?",
       "options": [
-        {"text": "Let them try.", "codep": {"andrew": 8, "ashley": 8}, "response": {"character": "ashley", "mood": "sinister", "text": "That's my Andy."}},
-        {"text": "I don't know.", "codep": {"andrew": -5, "ashley": -3}, "response": {"character": "ashley", "mood": "provoking", "text": "You don't know? ...I'll teach you."}}
+        {"text": "Let them try.", "codep": {"andrew": 5, "ashley": 5}, "response": {"character": "ashley", "mood": "cute", "text": "That's my Andy."}},
+        {"text": "I don't know.", "codep": {"andrew": -3, "ashley": -5}, "response": {"character": "ashley", "mood": "are_u_serious", "text": "You don't know? ...I'll teach you."}}
       ]
-    }
+    },
+    {
+  "speaker": "ashley",
+  "question": "Andy, say you love me?",
+  "options": [
+    {"text": "...You know I do.", "codep": {"andrew": 0, "ashley": -3}, "response": {"character": "ashley", "mood": "are_u_serious", "text": "I love you is a full sentence. Say it."}},
+    {"text": "What kind of question is that?", "codep": {"andrew": -2, "ashley": -8}, "response": {"character": "ashley", "mood": "angry", "text": "The kind that needs an answer. The kind you keep dodging."}}
+  ]
+    },
+    {
+  "speaker": "ashley",
+  "question": "Are you thinking of that bitch again???",
+  "options": [
+    {"text": "Who?", "codep": {"andrew": 0, "ashley": 5}, "response": {"character": "ashley", "mood": "hmm", "text": "Don't play dumb. You know exactly who."}},
+    {"text": "No.", "codep": {"andrew": 1, "ashley": 8}, "response": {"character": "andrew", "mood": "you know me well", "text": "Only Leyley."}}
+  ]
+}
   ]
 }
