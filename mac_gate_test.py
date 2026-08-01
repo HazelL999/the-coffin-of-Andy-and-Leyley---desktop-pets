@@ -106,16 +106,60 @@ def main():
     root.update()
 
     # Bridge to the Tk Toplevel's NSWindow -> contentView, add the sprite sublayer.
-    ns_win = AppKit.NSApplication.sharedApplication().windowWithWindowNumber_(
-        win.winfo_id())
+    # winfo_id() returns Tk's internal id, NOT the NSWindow windowNumber, so
+    # windowWithWindowNumber_ usually returns None. Try several paths and print
+    # what each yields so we can see which works on this Tk build.
+    ns_app = AppKit.NSApplication.sharedApplication()
+    wid = win.winfo_id()
+    print("winfo_id:", wid, type(wid))
+
+    ns_win = None
+    # Path A: windowWithWindowNumber_ with the winfo id (often fails).
+    try:
+        cand = ns_app.windowWithWindowNumber_(wid)
+        print("path A windowWithWindowNumber_:", cand)
+        if cand is not None:
+            ns_win = cand
+    except Exception as e:
+        print("path A failed:", e)
+
+    # Path B: orderedWindows — the AppKit-known windows. The Tk Toplevel should
+    # be among them (often the last one created). Match by frame to our geometry.
     if ns_win is None:
-        print("ERROR: could not resolve NSWindow from winfo_id — bridge failed.")
-        root.destroy()
+        try:
+            ow = ns_app.orderedWindows()
+            print("path B orderedWindows count:", len(ow) if ow else 0)
+            target_frame = AppKit.NSMakeRect(100, 100, 200, 200)  # geometry 200x200+100+100 (Cocoa origin = bottom-left)
+            best = None
+            for w in ow:
+                f = w.frame()
+                # Tk geometry +100+100 is top-left screen; Cocoa is bottom-left.
+                # Just pick a 200x200 window as a heuristic.
+                if abs(f.size.width - 200) < 1 and abs(f.size.height - 200) < 1:
+                    best = w
+                    break
+            print("path B match (200x200 window):", best)
+            if best is not None:
+                ns_win = best
+        except Exception as e:
+            print("path B failed:", e)
+
+    if ns_win is None:
+        print("ERROR: could not resolve NSWindow by any path.")
+        print("orderedWindows details:")
+        try:
+            for w in (ns_app.orderedWindows() or []):
+                print("  ", w, w.frame())
+        except Exception as e:
+            print("  ", e)
+        root.after(8000, root.destroy)
         return
+    print("resolved NSWindow:", ns_win)
     content = ns_win.contentView()
+    print("contentView:", content)
     if content is None:
         print("ERROR: NSWindow has no contentView.")
-        root.destroy()
+        root.after(8000, root.destroy)
         return
 
     # Build a red RGBA image and attach as a SpriteLayer subview.
