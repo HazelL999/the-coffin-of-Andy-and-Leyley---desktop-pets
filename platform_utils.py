@@ -341,7 +341,14 @@ class MacSpriteBridge:
         self._layer = _SpriteLayer.alloc().initWithFrame_image_(frame, None)
         if self._layer is None:
             return False
-        content.addSubview_(self._layer)
+        # Add the sprite layer BELOW the Tk Canvas (TKContentView) so the
+        # Canvas stays the hit-test target and receives all mouse events
+        # (left-click drag/poke AND right-click menu / two-finger tap).
+        # Relying on hitTest_ pass-through was fragile for rightMouseDown.
+        # The Canvas is transparent (systemTransparent), so the sprite still
+        # shows through from underneath.
+        content.addSubview_positioned_relativeTo_(
+            self._layer, _AppKit.NSWindowBelow, None)
         self._ns_win = ns_win
         return True
 
