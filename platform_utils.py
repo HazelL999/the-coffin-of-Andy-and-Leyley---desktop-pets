@@ -256,25 +256,34 @@ if _mac_pyobjc_available():
 def _resolve_ns_window(tk_win):
     """Find the NSWindow backing a Tk Toplevel on macOS.
 
-    winfo_id() returns Tk's internal id, not the NSWindow windowNumber, so
-    windowWithWindowNumber_ returns None. Fall back to orderedWindows() and
-    match by frame size/origin (the Tk Toplevel's geometry). Returns the
-    NSWindow (a TKWindow subclass) or None.
+    winfo_id() returns Tk's internal MacDrawable*, not the NSWindow
+    windowNumber, so windowWithWindowNumber_ returns None. Fall back to
+    NSApp.orderedWindows() and match by frame size AND origin. Size alone
+    is not enough — two pet windows have identical size but different
+    positions, so a size-only match would attach both sprite bridges to the
+    same NSWindow. Cocoa's frame origin is bottom-left; Tk's winfo_x/y is
+    top-left, so convert: cocoa_origin_y = screen_h - tk_y - win_h.
+    Returns the NSWindow (a TKWindow) or None.
     """
     if not _mac_pyobjc_available():
         return None
     try:
         ns_app = _AppKit.NSApplication.sharedApplication()
-        # Tk Toplevels appear in orderedWindows() as TKWindow instances.
-        target_w = tk_win.winfo_width()
-        target_h = tk_win.winfo_height()
-        # Tk geometry "+x+y" is top-left; Cocoa frame origin is bottom-left.
-        # Match by size (most reliable — two pets differ by position not size,
-        # but each call resolves after that pet's own window is mapped).
+        tw = tk_win.winfo_width()
+        th = tk_win.winfo_height()
+        tx = tk_win.winfo_x()
+        ty = tk_win.winfo_y()
+        screen_h = tk_win.winfo_screenheight()
+        # Cocoa origin is bottom-left; flip the Tk top-left y.
+        cocoa_x = tx
+        cocoa_y = screen_h - ty - th
         best = None
         for w in ns_app.orderedWindows() or []:
             f = w.frame()
-            if abs(f.size.width - target_w) < 2 and abs(f.size.height - target_h) < 2:
+            if (abs(f.size.width - tw) < 2
+                    and abs(f.size.height - th) < 2
+                    and abs(f.origin.x - cocoa_x) < 2
+                    and abs(f.origin.y - cocoa_y) < 2):
                 best = w
                 break
         return best

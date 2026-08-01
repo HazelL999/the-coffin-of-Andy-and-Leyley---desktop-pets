@@ -134,7 +134,8 @@ class Altar:
             p = outer[(i * 2) % 5]
             star_poly.extend(p)
         self.canvas.create_polygon(*star_poly,
-                                    outline="#5a0e0e", fill=config.TRANSPARENT_COLOR,
+                                    outline="#5a0e0e",
+                                    fill=platform_utils.transparent_bg(config.TRANSPARENT_COLOR),
                                     width=3, smooth=False)
 
         # Demon (entity sprite) at center.
