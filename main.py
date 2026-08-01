@@ -554,10 +554,18 @@ class PetApp:
         # and reliably pushes the window back above other topmost windows.
         # Skip a pet that's being dragged right now (would yank it under the
         # cursor).
-        if now - self._last_lift >= config.LIFT_INTERVAL_S:
+        #
+        # macOS: SKIP this entirely. Repeatedly toggling -topmost on macOS
+        # reactivates the window each cycle (it becomes key window again),
+        # which yanks focus, covers popups like the altar, and disrupts
+        # event delivery (right-click / two-finger tap). Mac's window
+        # stacking is stable enough without the periodic bump — pets were
+        # set -topmost once at creation and stay on top.
+        if (not platform_utils.is_macos()
+                and now - self._last_lift >= config.LIFT_INTERVAL_S):
             self._last_lift = now
             # Lift the bond window FIRST so the pets (lifted after) stay above
-            # the line, but both end up above normal app windows.
+            # the line, but both end up above normal app apps.
             if self._bond_win:
                 try:
                     self._bond_win.attributes("-topmost", False)
