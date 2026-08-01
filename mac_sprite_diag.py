@@ -14,11 +14,15 @@ if sys.platform != "darwin":
 import tkinter as tk
 from PIL import Image, ImageTk
 
-root = tk.Toplevel() if False else tk.Tk()
+root = tk.Tk()
 root.withdraw()
 
 print("Tcl/Tk version:", tk.Tcl().eval("info patchlevel"))
-print("Tk windowingsystem:", tk.Tcl().eval("tk windowingsystem"))
+# 'tk windowingsystem' needs a real Tk main window; root is one now.
+try:
+    print("Tk windowingsystem:", root.tk.call("tk", "windowingsystem"))
+except tk.TclError as e:
+    print("Tk windowingsystem: FAILED", e)
 
 win = tk.Toplevel(root)
 win.overrideredirect(True)

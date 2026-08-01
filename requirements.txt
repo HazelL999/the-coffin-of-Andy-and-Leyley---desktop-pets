@@ -2,6 +2,9 @@ Pillow>=12.3
 # Background music playback (cross-platform). Optional — if not installed,
 # the app runs silently. pip install pygame
 pygame>=2.5
-# macOS only, optional: enables the "click-through" toggle. Without it the app
-# still runs (pets are grabbable by default). Ignored on Windows/Linux.
-pyobjc-core>=9.0; sys_platform == "darwin"
+# macOS only: provides AppKit (NSWindow/NSView/NSImage) for the sprite
+# rendering bridge (Tk's create_image is zeroed by a SourceAtop bug on
+# transparent macOS windows) and the click-through toggle. Required on macOS
+# for pets to be visible; without it the app runs but sprites don't show.
+# Ignored on Windows/Linux. pip install pyobjc-framework-Cocoa
+pyobjc-framework-Cocoa>=9.0; sys_platform == "darwin"
