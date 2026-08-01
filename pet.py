@@ -158,15 +158,9 @@ class Pet:
             self.image_item = self.canvas.create_image(
                 self.sprite_cx, self.sprite_cy, image=self._current_image(),
                 anchor="center")
-        # Shadow under the sprite — a darkened ellipse whose opacity reflects
-        # mental state (good = faint, bad = dark). Drawn BEFORE the sprite
-        # so it sits underneath.
-        sh_y = self.sprite_cy + config.PLACEHOLDER_SIZE // 2 - 4
-        self.shadow_item = self.canvas.create_oval(
-            self.sprite_cx - 40, sh_y - 6,
-            self.sprite_cx + 40, sh_y + 6,
-            fill="#000000", outline="", state="hidden")
-        self.canvas.tag_lower(self.shadow_item)  # behind sprite
+        # Shadow under the sprite removed (Win + macOS) — the darkened ellipse
+        # mental-state indicator is gone per user request.
+        self.shadow_item = None
 
         # Place the SPRITE at a random on-screen position. self.x/self.y are the
         # sprite's top-left; the window itself is offset upward to leave room

@@ -787,14 +787,14 @@ class PetApp:
         # periodic pet lift (which would otherwise bump pets back on top),
         # and lift the vision window itself to the very front.
         self._lift_paused = True
-        # Also lower an open backpack so the vision (full-screen image)
-        # stays the topmost visible window — the backpack is a normal UI
-        # topmost and would otherwise sit on top of the vision.
+        # Also drop an open backpack's -topmost so the vision (still topmost)
+        # sits above it. Tk's lower() doesn't reliably reorder across topmost
+        # windows on macOS; toggling -topmost off on the backpack does.
         backpack_was_open = (self.backpack is not None
                              and self.backpack.win is not None)
         if backpack_was_open:
             try:
-                self.backpack.win.lower()
+                self.backpack.win.attributes("-topmost", False)
             except Exception:
                 pass
         vw.show()
@@ -803,9 +803,8 @@ class PetApp:
         except Exception:
             pass
         if backpack_was_open:
-            # Restore the backpack above the pets once the vision closes.
-            prev_on_close = vw.on_close
-
+            # Restore the backpack's topmost (and lift it back above the pets)
+            # once the vision closes.
             def _restore_both():
                 try:
                     setattr(self, "_lift_paused", False)
@@ -813,6 +812,7 @@ class PetApp:
                     pass
                 if self.backpack is not None and self.backpack.win is not None:
                     try:
+                        self.backpack.win.attributes("-topmost", True)
                         self.backpack.win.lift()
                     except Exception:
                         pass
