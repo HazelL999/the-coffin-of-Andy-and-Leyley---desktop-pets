@@ -549,37 +549,48 @@ class PetApp:
 
         # Periodically re-assert topmost on both pets so other always-on-top
         # windows (taskbar, our own panel/popups, other apps) can't bury them.
-        # Toggle off-then-on rather than a bare lift(): lift() only reorders
-        # within the topmost group, while toggling re-asserts the topmost flag
-        # and reliably pushes the window back above other topmost windows.
         # Skip a pet that's being dragged right now (would yank it under the
         # cursor).
-        #
-        # macOS: SKIP this entirely. Repeatedly toggling -topmost on macOS
-        # reactivates the window each cycle (it becomes key window again),
-        # which yanks focus, covers popups like the altar, and disrupts
-        # event delivery (right-click / two-finger tap). Mac's window
-        # stacking is stable enough without the periodic bump — pets were
-        # set -topmost once at creation and stay on top.
-        if (not platform_utils.is_macos()
-                and now - self._last_lift >= config.LIFT_INTERVAL_S):
+        if now - self._last_lift >= config.LIFT_INTERVAL_S:
             self._last_lift = now
-            # Lift the bond window FIRST so the pets (lifted after) stay above
-            # the line, but both end up above normal app apps.
-            if self._bond_win:
-                try:
-                    self._bond_win.attributes("-topmost", False)
-                    self._bond_win.attributes("-topmost", True)
-                except tk.TclError:
-                    pass
-            for pet in self.pets:
-                if pet._drag_data or not pet.win:
-                    continue
-                try:
-                    pet.win.attributes("-topmost", False)
-                    pet.win.attributes("-topmost", True)
-                except tk.TclError:
-                    pass
+            if platform_utils.is_macos():
+                # macOS: use lift() only. Toggling -topmost off-then-on
+                # reactivates the window (it becomes key window again) every
+                # cycle, which yanks focus, covers popups like the altar, and
+                # disrupts event delivery (two-finger tap). lift() reorders
+                # within the topmost group WITHOUT reactivation — keeps pets
+                # above normal app windows (they're -topmost) without the
+                # disruptive reactivation.
+                if self._bond_win:
+                    try:
+                        self._bond_win.lift()
+                    except tk.TclError:
+                        pass
+                for pet in self.pets:
+                    if pet._drag_data or not pet.win:
+                        continue
+                    try:
+                        pet.win.lift()
+                    except tk.TclError:
+                        pass
+            else:
+                # Windows: toggle off-then-on re-asserts the topmost flag and
+                # reliably pushes above OTHER apps' topmost windows (lift()
+                # only reorders within the topmost group on Windows).
+                if self._bond_win:
+                    try:
+                        self._bond_win.attributes("-topmost", False)
+                        self._bond_win.attributes("-topmost", True)
+                    except tk.TclError:
+                        pass
+                for pet in self.pets:
+                    if pet._drag_data or not pet.win:
+                        continue
+                    try:
+                        pet.win.attributes("-topmost", False)
+                        pet.win.attributes("-topmost", True)
+                    except tk.TclError:
+                        pass
 
         self.root.after(config.FRAME_MS, self._tick)
 
