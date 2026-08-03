@@ -338,7 +338,8 @@ class PetApp:
                       on_set_city=self._on_set_city,
                       on_ai_chat=self._on_ai_chat,
                       on_toggle_music=self._on_toggle_music,
-                      on_toggle_companion=self._toggle_companion)
+                      on_toggle_companion=self._toggle_companion,
+                      on_watch_tv=self._on_watch_tv)
             pet.start()
             self.pets.append(pet)
 
@@ -354,6 +355,9 @@ class PetApp:
 
         # The altar window (summoned on demand, dismissed when done).
         self.altar = None
+        # The TV window (summoned on demand via "Watch TV"; hides the desktop
+        # sprites while open and restores them on close).
+        self.tv = None
         # Backpack & talisman charges (sacrifice +1, use -1). Persisted across
         # restarts in the env-state file so a sacrifice isn't lost on quit.
         self.backpack = None
@@ -925,6 +929,34 @@ class PetApp:
                                on_sacrifice_start=self._on_sacrifice_start,
                                rng=self.rng)
             self.altar.start()
+
+    def _on_watch_tv(self, pet=None):
+        """Summon the TV (reused if already open) and hide both desktop
+        sprites — the pets are 'on the couch' in the TV window. Pause the
+        periodic pet lift so the hidden sprite windows aren't toggled."""
+        if self.tv is not None and self.tv.win is not None:
+            try:
+                self.tv.win.lift()
+                self.tv.win.focus_force()
+            except tk.TclError:
+                pass
+            return
+        from tv import TV
+        self.tv = TV(self.root, on_close=self._on_tv_close, rng=self.rng)
+        self.tv.start()
+        # Hide the desktop pets for the duration of the TV. Also exit
+        # companion mode on each (the parked pet would keep floating an
+        # invisible window otherwise) — hide_sprite handles that.
+        for p in self.pets:
+            p.hide_sprite()
+        self._lift_paused = True
+
+    def _on_tv_close(self):
+        """The TV window closed — restore the desktop sprites and lift."""
+        for p in self.pets:
+            p.show_sprite()
+        self._lift_paused = False
+        self.tv = None
 
     def _on_sacrifice_start(self):
         """Ashley says her offering line immediately when the sacrifice begins

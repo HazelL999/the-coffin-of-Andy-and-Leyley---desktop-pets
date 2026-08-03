@@ -33,7 +33,8 @@ class Pet:
                  on_partner_freeze=None, on_drag_onto_partner=None,
                  on_poked=None, on_check_state=None, on_summon_altar=None,
                  on_open_backpack=None, on_set_city=None, on_ai_chat=None,
-                 on_toggle_music=None, on_toggle_companion=None):
+                 on_toggle_music=None, on_toggle_companion=None,
+                 on_watch_tv=None):
         self.character = character
         self.loader = loader
         self.dialogue = dialogue_store
@@ -52,6 +53,7 @@ class Pet:
         self.on_ai_chat = on_ai_chat  # right-click "AI chat…" handler
         self.on_toggle_music = on_toggle_music  # right-click "Music on/off" handler
         self.on_toggle_companion = on_toggle_companion  # right-click "Companion mode"
+        self.on_watch_tv = on_watch_tv  # right-click "Watch TV"
         self.partner_ref = None   # the other pet (set by PetApp after both start)
         self.codep = None         # CodependencyState (set by PetApp)
 
@@ -728,6 +730,29 @@ class Pet:
         if self.on_toggle_companion:
             self.on_toggle_companion(self)
 
+    # ---------- watch-TV sprite hide/show ----------
+    def hide_sprite(self):
+        """Hide the desktop pet entirely while the TV is on (the pets are
+        'on the couch' in the TV window instead). withdraw() the whole window
+        so nothing is visible or clickable. Pauses companion mode's float so
+        the parked pet doesn't keep moving an invisible window."""
+        if self.companion_mode:
+            self.set_companion_mode(False)
+        if self.win:
+            try:
+                self.win.withdraw()
+            except tk.TclError:
+                pass
+
+    def show_sprite(self):
+        """Restore the desktop pet after the TV closes."""
+        if self.win:
+            try:
+                self.win.deiconify()
+                self.win.lift()
+            except tk.TclError:
+                pass
+
     def set_distance_band(self, band):
         """Set the inter-pet distance band; biases idle moods and dialogue
         cooldown (see expressions + config.DISTANCE_BAND_COOLDOWN_SCALE)."""
@@ -975,6 +1000,9 @@ class Pet:
         if self.on_open_backpack:
             menu.add_command(label="Backpack",
                              command=self.on_open_backpack)
+        if self.on_watch_tv:
+            menu.add_command(label="Watch TV",
+                             command=lambda: self.on_watch_tv(self))
         if self.on_ai_chat:
             menu.add_command(label="AI chat…",
                              command=lambda: self.on_ai_chat(self))

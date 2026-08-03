@@ -163,6 +163,23 @@ BOND_THRESHOLD = 99.5
 ALTAR_SIZE = 200               # px — square altar window
 ALTAR_STAR_RADIUS = 80         # outer radius of the pentagram
 
+# --- TV (watch-TV mode: ads on the screen, pets on the couch) ---
+# A summoned opaque window. The screen region (TV_SCREEN_*) sits inside a
+# code-drawn bezel; ads fill it. The couch image goes to the right of the
+# screen. Ads live one-per-subfolder under ads/ (single image = held
+# TV_AD_HOLD_S; .gif = frame-by-frame at the gif's own durations; multiple
+# PNGs = a looping sequence). Empty ads/ -> static/no-signal placeholder.
+ADS_DIR = ROOT_DIR / "ads"
+TV_WIDTH = 860                 # total window width (screen + couch)
+TV_HEIGHT = 380                # total window height
+TV_SHELL_PAD = 16              # px padding around the bezel
+TV_SCREEN_W = 440              # ad screen width
+TV_SCREEN_H = 268              # ad screen height
+TV_SCREEN_TOP = 28            # y offset of the screen top inside the window
+TV_KNOB_BAND = 38             # height of the knob strip below the screen
+TV_AD_HOLD_S = 5.0            # seconds a single-image ad stays on screen
+TV_COUCH_IMG = str(ADS_DIR / "couch.png")  # the "pets on the couch" image
+
 # --- Backpack & talisman ---
 BACKPACK_DIR = str(ROOT_DIR / "backpack")
 VISION_DIR = str(ROOT_DIR / "vision")
