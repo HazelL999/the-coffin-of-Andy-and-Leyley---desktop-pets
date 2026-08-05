@@ -46,6 +46,19 @@ Any of:
 python run.py --no-interaction   # disable pet-to-pet interaction sequences
 ```
 
+### Desktop shortcut icon (Windows)
+
+A shortcut to `run.py` shows Python's own icon by default. To use the
+Andy & Leyley icon instead, the repo ships [`app_icon.ico`](app_icon.ico)
+(16–256px, multi-size). After creating the shortcut:
+
+1. Right-click the shortcut → **Properties** → **Change icon...**
+2. Browse to `app_icon.ico` in the project root → OK.
+
+`build/make_icon.py` regenerates this file from the raw sprite source art
+(`Andrew-sprites/` + `Ashley-sprites/`, gitignored) if you want to rebuild it.
+
+
 ---
 
 ## How it works

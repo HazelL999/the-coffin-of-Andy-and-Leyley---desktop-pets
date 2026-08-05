@@ -15,8 +15,10 @@ import os
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Each character's default-mood portrait (matches _DEFAULT_MOOD in ai_chat.py:
+# Andrew -> neutral, Ashley -> chuckle). Ashley has no "neutral" art folder.
 ANDREW = os.path.join(ROOT, "Andrew-sprites", "neutral-1.png")
-ASHLEY = os.path.join(ROOT, "Ashley-sprites", "neutral-1.png")
+ASHLEY = os.path.join(ROOT, "Ashley-sprites", "chuckle.png")
 OUT = os.path.join(ROOT, "build")
 os.makedirs(OUT, exist_ok=True)
 
