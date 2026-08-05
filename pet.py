@@ -105,11 +105,6 @@ class Pet:
         # Idle pause timer
         self.idle_timer = self.rng.uniform(*config.IDLE_PAUSE_RANGE)
 
-        # Shadow band cache: _update_shadow only re-applies itemconfig when the
-        # band changes, so calling it every frame is cheap (no flicker, no
-        # redundant Tk calls). -1 = "not yet drawn" sentinel.
-        self._shadow_band = -1
-
         # Dragging
         self._drag_data = None
 
@@ -169,9 +164,6 @@ class Pet:
             self.image_item = self.canvas.create_image(
                 self.sprite_cx, self.sprite_cy, image=self._current_image(),
                 anchor="center")
-        # Shadow under the sprite removed (Win + macOS) — the darkened ellipse
-        # mental-state indicator is gone per user request.
-        self.shadow_item = None
 
         # Place the SPRITE at a random on-screen position. self.x/self.y are the
         # sprite's top-left; the window itself is offset upward to leave room
@@ -252,37 +244,6 @@ class Pet:
         # (avoids building/destroying a widget per line).
         self._meas_label = tk.Label(self.win, font=(_UI_FONT, 10), justify="left")
 
-    def _round_rect_pts_arc(self, x0, y0, x1, y1, r):
-        """Build a rounded-rectangle polygon by sampling arc points at each
-        corner. 8 samples per corner is smooth enough at small sizes."""
-        pts = []
-        n = 8
-        # top-right corner: center (x1-r, y0+r), from 0deg to 90deg (in screen coords)
-        cx, cy = x1 - r, y0 + r
-        for i in range(n + 1):
-            a = math.pi / 2 * (i / n)
-            pts.append(cx + r * math.sin(a))
-            pts.append(cy - r * math.cos(a))
-        # bottom-right corner: center (x1-r, y1-r), 90 to 180
-        cx, cy = x1 - r, y1 - r
-        for i in range(n + 1):
-            a = math.pi / 2 * (i / n)
-            pts.append(cx + r * math.cos(a))
-            pts.append(cy + r * math.sin(a))
-        # bottom-left corner: center (x0+r, y1-r), 180 to 270
-        cx, cy = x0 + r, y1 - r
-        for i in range(n + 1):
-            a = math.pi / 2 * (i / n)
-            pts.append(cx - r * math.sin(a))
-            pts.append(cy + r * math.cos(a))
-        # top-left corner: center (x0+r, y0+r), 270 to 360
-        cx, cy = x0 + r, y0 + r
-        for i in range(n + 1):
-            a = math.pi / 2 * (i / n)
-            pts.append(cx - r * math.cos(a))
-            pts.append(cy - r * math.sin(a))
-        return pts
-
     def _show_bubble(self, text):
         if not self.canvas:
             return
@@ -323,7 +284,7 @@ class Pet:
         # Tail points down toward the sprite head, on the facing side.
         tail_x = bx0 + bw // 2
         # Draw rounded bubble: white fill, thin gray outline.
-        pts = self._round_rect_pts_arc(bx0, by0, bx1, by1, radius)
+        pts = theme.round_rect_points(bx0, by0, bx1, by1, radius)
         bg_item = self.canvas.create_polygon(
             *pts, fill="white", outline="#9aa0a6", width=1, smooth=False)
         tail = self.canvas.create_polygon(
@@ -365,10 +326,6 @@ class Pet:
             return
         self._update_movement(dt)
         self._update_animation(dt)
-        # Mental-state shadow tracks codep drift, not just mood changes — so it
-        # must refresh every frame. _update_shadow caches by band, making this
-        # a no-op until the value crosses a band boundary.
-        self._update_shadow()
 
     def _update_movement(self, dt):
         # While frozen (someone is speaking), hold position — no wander, no
@@ -779,42 +736,6 @@ class Pet:
             delta = expressions.MOOD_CODEP_DELTA.get(mood, 0.0)
             if delta != 0.0:
                 self.codep.adjust(self.character, delta)
-        self._update_shadow()
-
-    def _update_shadow(self):
-        """Reflect mental state as a shadow under the sprite. Good codep =
-        no shadow (hidden); middling = faint; bad = dark. Three bands.
-
-        Called every frame (via update()), so it tracks slow codep drift, not
-        just mood changes. Cached by band index so the per-frame call is a
-        no-op until the value crosses a boundary — no redundant itemconfig, no
-        flicker."""
-        if not self.shadow_item or not self.canvas or not self.codep:
-            return
-        v = self.codep.get(self.character)
-        if v >= 50:
-            band = 0
-        elif v >= 20:
-            band = 1
-        else:
-            band = 2
-        if band == self._shadow_band:
-            return
-        self._shadow_band = band
-        try:
-            if band == 0:
-                # Stable/good — no shadow.
-                self.canvas.itemconfig(self.shadow_item, state="hidden")
-            elif band == 1:
-                # Wobbling — faint shadow.
-                self.canvas.itemconfig(self.shadow_item, state="normal",
-                                     fill="#1a0a0a", stipple="gray50")
-            else:
-                # Bad — dark shadow.
-                self.canvas.itemconfig(self.shadow_item, state="normal",
-                                     fill="#000000", stipple="")
-        except tk.TclError:
-            pass
 
     def _show_frame(self, index):
         """Force the current mood to display a specific frame index."""
@@ -1004,8 +925,12 @@ class Pet:
             menu.add_command(label="Watch TV",
                              command=lambda: self.on_watch_tv(self))
         if self.on_ai_chat:
-            menu.add_command(label="AI chat…",
-                             command=lambda: self.on_ai_chat(self))
+            chat_menu = theme.style_menu(tk.Menu(menu, tearoff=0))
+            chat_menu.add_command(label="One-on-one chat…",
+                                  command=lambda: self.on_ai_chat(self, "sprite"))
+            chat_menu.add_command(label="Group chat…",
+                                  command=lambda: self.on_ai_chat(self, "group"))
+            menu.add_cascade(label="AI chat", menu=chat_menu)
         if self.on_toggle_companion:
             menu.add_command(label="Companion mode: On/Off",
                              command=self._toggle_companion)

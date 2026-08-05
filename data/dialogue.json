@@ -130,22 +130,6 @@
       {"character": "ashley", "mood": "worried",      "text": "I'm never letting you go. You know that."}
     ]}
   ],
-  "prophecy": [
-    {"sequence": [
-      {"character": "ashley", "mood": "sinister",     "text": "I saw it. In the dream. What happens next."},
-      {"character": "andrew", "mood": "scared",      "text": "...Do I want to know?"},
-      {"character": "ashley", "mood": "chuckle",         "text": "No. But you'll find out anyway."}
-    ]},
-    {"sequence": [
-      {"character": "andrew", "mood": "thinking",     "text": "Something's coming. I can feel it."},
-      {"character": "ashley", "mood": "hmm",          "text": "The demon showed me. It's already too late to stop it."}
-    ]},
-    {"sequence": [
-      {"character": "ashley", "mood": "regreful",     "text": "I dreamt of us. At the end of all of this."},
-      {"character": "andrew", "mood": "desperate",   "text": "And? ...Are we together?"},
-      {"character": "ashley", "mood": "sinister",    "text": "We're always together, Andy. That's the problem."}
-    ]}
-  ],
 
   "_env_comment": "Environment-triggered lines. Spoken at first launch of the day (greetings/holidays) or when a condition changes (weather category, todo count). Moods must be slugs in expressions.MOODS with art. 'date' is MM-DD. Weather 'category' is rain/overcast/clear (from Open-Meteo WMO code).",
 

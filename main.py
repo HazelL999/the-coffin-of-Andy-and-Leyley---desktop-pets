@@ -441,21 +441,13 @@ class PetApp:
                       width=11, command=self._toggle_interaction))
         self.inter_btn.pack(side="left", padx=3)
 
-        if platform_utils.is_macos():
-            # No "Click-through" button on macOS: Mac pets receive clicks via
-            # per-pixel transparency (the sprite's opaque pixels hit-test),
-            # so there's nothing to toggle. The set_click_through helper is
-            # only used by the full-screen bond-line overlay (which must NOT
-            # swallow desktop clicks), not by the pets themselves. Show the
-            # same hint label as Windows instead.
-            tk.Label(self.panel, text="Right-click a pet for more",
-                     font=(config.UI_FONT, 8),
-                     fg=theme.FG_DIM, bg=theme.BG).pack(pady=(2, 0))
-        else:
-            # Position hint label instead.
-            tk.Label(self.panel, text="Right-click a pet for more",
-                     font=(config.UI_FONT, 8),
-                     fg=theme.FG_DIM, bg=theme.BG).pack(pady=(2, 0))
+        # No "Click-through" button anywhere: macOS pets receive clicks via
+        # per-pixel transparency (opaque sprite pixels hit-test), and on
+        # Windows click-through is always on via -transparentcolor. So both
+        # platforms just show the same discovery hint.
+        tk.Label(self.panel, text="Right-click a pet for more",
+                 font=(config.UI_FONT, 8),
+                 fg=theme.FG_DIM, bg=theme.BG).pack(pady=(2, 0))
 
         # Place panel near bottom-right of the primary screen.
         try:
@@ -587,7 +579,7 @@ class PetApp:
             pet.update(dt)
             event = pet.scheduler.tick(dt)
             if event:
-                # While a scene (drag-onto / altar prophecy / scripted exchange)
+                # While a scene (drag-onto / altar sacrifice / scripted exchange)
                 # is mid-flight, don't let a pet's scheduler fire a random
                 # dialogue line that would talk over the scripted beats. Wander
                 # is harmless (movement), expression just changes the face, so
@@ -810,10 +802,17 @@ class PetApp:
         playing = self.music.toggle()
         # Could show a status bubble, but keep it simple — silent toggle.
 
-    def _on_ai_chat(self, pet):
-        """Open the AI-chat dialog for the right-clicked pet."""
-        import ai_dialog
-        ai_dialog.open_ai_dialog(self.root, pet, director=self.director)
+    def _on_ai_chat(self, pet, mode="sprite"):
+        """Open an AI-chat window for the right-clicked pet. `mode` is
+        "sprite" (the original sprite+mood popup) or "group" (the social-app
+        group-chat IM where both pets reply)."""
+        if mode == "group":
+            import group_chat
+            group_chat.open_group_chat(self.root, self.pets,
+                                       director=self.director)
+        else:
+            import ai_dialog
+            ai_dialog.open_ai_dialog(self.root, pet, director=self.director)
 
     def _toggle_companion(self, pet=None):
         """Toggle companion mode for BOTH pets. On: park them side by side in

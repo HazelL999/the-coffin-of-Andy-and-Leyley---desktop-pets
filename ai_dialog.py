@@ -11,7 +11,6 @@ Two canvas modes in one window:
 Art is user-supplied (config.AICHAT_DIR + assets/<character>/<mood>/).
 """
 
-import math
 import threading
 import tkinter as tk
 
@@ -22,7 +21,6 @@ import user_settings
 from PIL import Image, ImageTk
 
 _SPRITE_SIZE = config.PLACEHOLDER_SIZE  # 128 — matches the desktop pet sprite
-_BG = (0x14, 0x14, 0x14)  # dialog background RGB, matched to theme.BG for sprite compositing
 
 
 class _ImageCache:
@@ -52,60 +50,16 @@ class _ImageCache:
         window, so we composite to the real bg color per the project rule).
 
         If the character has no art folder for this mood, falls back to the
-        character's default mood (neutral/chuckle) so we never show a placeholder."""
+        character's default mood (neutral/chuckle) so we never show a placeholder.
+        Cached by (character, mood)."""
         key = (character, mood)
         if key in self._sprite:
             return self._sprite[key]
-        # Load the raw RGBA frame straight from the assets folder (bypass the
-        # AssetLoader's magenta baking).
-        folder = config.ASSETS_DIR / character / mood
-        im = None
-        try:
-            pngs = sorted(p for p in folder.glob("*.png"))
-            if pngs:
-                im = Image.open(pngs[0]).convert("RGBA")
-        except Exception:
-            im = None
-        if im is None:
-            # No art for this mood — fall back to the character's default mood
-            # rather than showing a placeholder card.
-            default_mood = "neutral" if character == "andrew" else "chuckle"
-            if mood != default_mood:
-                return self.sprite(character, default_mood)
-            return None  # even the default is missing — nothing to show
-        # Composite the transparent sprite over the dialog bg color.
-        bg_img = Image.new("RGBA", im.size, _BG + (255,))
-        composed = Image.alpha_composite(bg_img, im).convert("RGB")
-        photo = ImageTk.PhotoImage(composed)
-        self._sprite[key] = photo
+        # Delegate the load+composite to the shared theme helper, then cache.
+        photo = theme.sprite_over_bg(character, mood)
+        if photo is not None:
+            self._sprite[key] = photo
         return photo
-
-
-def _round_rect_pts(x0, y0, x1, y1, r, n=8):
-    """Rounded-rectangle polygon points (4 corners sampled at n+1 points each).
-    Compact re-implementation of pet.py:_round_rect_pts_arc for the dialog."""
-    pts = []
-    # top-right
-    cx, cy = x1 - r, y0 + r
-    for i in range(n + 1):
-        a = math.pi / 2 * (i / n)
-        pts += [cx + r * math.sin(a), cy - r * math.cos(a)]
-    # bottom-right
-    cx, cy = x1 - r, y1 - r
-    for i in range(n + 1):
-        a = math.pi / 2 * (i / n)
-        pts += [cx + r * math.cos(a), cy + r * math.sin(a)]
-    # bottom-left
-    cx, cy = x0 + r, y1 - r
-    for i in range(n + 1):
-        a = math.pi / 2 * (i / n)
-        pts += [cx - r * math.sin(a), cy + r * math.cos(a)]
-    # top-left
-    cx, cy = x0 + r, y0 + r
-    for i in range(n + 1):
-        a = math.pi / 2 * (i / n)
-        pts += [cx - r * math.cos(a), cy - r * math.sin(a)]
-    return pts
 
 
 def open_ai_dialog(root, pet, director=None):
@@ -119,6 +73,12 @@ def open_ai_dialog(root, pet, director=None):
     cache = _ImageCache(pet)
     busy = {"on": False}
     selected = {"char": None}   # None = scene mode; else sprite view for char
+    # Running conversation history for multi-turn chat. Each entry is a
+    # {"role": "user"/"assistant", "content": str} OpenRouter message. The
+    # assistant content keeps the `mood|line` prefix so the persona stays
+    # consistent across turns. Reset when the user switches character or
+    # relaunches the dialog. Capped in ai_chat.build_messages.
+    conversation = []
 
     # Window sizing: canvas on top, then buttons, then chat input bar.
     img_w = 600
@@ -219,7 +179,7 @@ def open_ai_dialog(root, pet, director=None):
         bx1 = bx0 + bw
         # Tail points up to the sprite, centered on the bubble.
         tail_x = bx0 + bw // 2
-        pts = _round_rect_pts(bx0, by0, bx1, by1, radius)
+        pts = theme.round_rect_points(bx0, by0, bx1, by1, radius)
         bg = canvas.create_polygon(*pts, fill="white", outline="#9aa0a6",
                                    width=1, smooth=False)
         tail = canvas.create_polygon(
@@ -239,6 +199,12 @@ def open_ai_dialog(root, pet, director=None):
         if busy["on"]:
             return
         selected["char"] = character
+        # Switching character starts a fresh conversation — the old history
+        # was with a different persona, so it would confuse the new one.
+        conversation.clear()
+        # Hide the "Talk to …" buttons once a character is chosen — they're
+        # only for the initial pick and would clutter the sprite view.
+        btns.pack_forget()
         # 1. Flash the talk-to scene image for 1.5s.
         scene = {
             "andrew": config.AICHAT_TALK_ANDREW,
@@ -282,6 +248,11 @@ def open_ai_dialog(root, pet, director=None):
             return
         char = selected["char"] or pet.character
         user_msg = entry.get().strip()
+        if not user_msg:
+            return  # nothing to say
+        # Clear the input so the user can type the next line right away
+        # (multi-turn chat). The message is already captured in user_msg.
+        entry.delete(0, tk.END)
         # If no character selected yet, drop into sprite view for the pet.
         if not selected["char"]:
             select(pet.character)
@@ -297,7 +268,10 @@ def open_ai_dialog(root, pet, director=None):
         _set_status("Generating…")
 
         def worker():
-            line, mood, cached = ai_chat.fetch_ai_line(char, user_msg)
+            # Pass the running conversation so the model can reply in context
+            # (multi-turn). ai_chat bypasses the cache when history is present.
+            line, mood, cached = ai_chat.fetch_ai_line(char, user_msg,
+                                                       history=conversation)
 
             def done():
                 busy["on"] = False
@@ -306,6 +280,12 @@ def open_ai_dialog(root, pet, director=None):
                     _set_sprite_mood(char, mood)
                     _show_bubble(line)
                     _set_status(f"{_disp_for(char)} said:{(' (cached)' if cached else '')}  {line}")
+                    # Append this turn to the running conversation so the next
+                    # request sees it. The assistant turn keeps the mood|line
+                    # prefix the model was instructed to emit, keeping the
+                    # persona consistent. user turn wraps the raw input.
+                    conversation.append({"role": "user", "content": user_msg})
+                    conversation.append({"role": "assistant", "content": f"{mood}|{line}"})
                 else:
                     loc = pet.dialogue.random_line(char, rng=pet.rng)
                     if loc:

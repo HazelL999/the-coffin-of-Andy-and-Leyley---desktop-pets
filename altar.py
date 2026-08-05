@@ -1,11 +1,12 @@
 """The altar: a temporary summoned window where a soul is sacrificed to the
-demon in exchange for prophecy.
+demon in exchange for a talisman charge.
 
 Geometry is all code-drawn (no sprite art): a red pentagram inside a dark
 ring, five candles on the outer points with flickering flames, a many-eyed
 demon blob at the center, and a floating soul orb at the lower-left. Right-
 click → Sacrifice animates the soul flying into the demon, the demon's eyes
-flaring, a flash, then a prophecy line is spoken by the nearest pet.
+flaring, and a flash; the sacrifice then grants one talisman charge (and
+Ashley speaks her offering line + a codependency shift, wired in main.py).
 """
 
 import math
@@ -403,10 +404,10 @@ class Altar:
         self._expand_flash(0)
         # Hide the demon-body flash after a beat (eyes already red, no recolor).
         self.win.after(500, self._reset_demon_eyes)
-        # Trigger prophecy.
+        # Notify the app the sacrifice is complete (grants a talisman charge).
         if self.on_sacrifice_done:
             self.win.after(700, self.on_sacrifice_done)
-        # End busy + reset soul after the prophecy window.
+        # End busy + reset soul after the sacrifice resolves.
         self.win.after(2200, self._reset_after_sacrifice)
 
     def _expand_flash(self, step):

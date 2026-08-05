@@ -71,8 +71,14 @@ def is_configured():
     return bool(user_settings.get_ai_key())
 
 
-def build_messages(character, user_msg=None):
-    """Assemble OpenRouter chat messages: system=persona, user=trigger or input."""
+def build_messages(character, user_msg=None, history=None):
+    """Assemble OpenRouter chat messages: system=persona, then the conversation
+    history (prior user/assistant turns), then the current user message.
+
+    `history` is a list of {"role": "user"/"assistant", "content": str} dicts
+    (the running conversation). When present, the assistant turns already carry
+    the `mood|line` prefix the model was instructed to emit, so the persona
+    stays consistent across turns."""
     persona = _PERSONA_SYSTEM.get(character, _PERSONA_SYSTEM["andrew"])
     if user_msg and user_msg.strip():
         # Make it unambiguous who is speaking and who is being addressed: the
@@ -86,13 +92,18 @@ def build_messages(character, user_msg=None):
     else:
         # No input: just say something on your mind right now.
         content = "Say one line that's on your mind right now, in character."
-    return [
-        {"role": "system", "content": persona},
-        {"role": "user", "content": content},
-    ]
+    messages = [{"role": "system", "content": persona}]
+    if history:
+        # Cap at the most recent turns so token usage stays bounded on the free
+        # tier (too many turns -> 429). history holds pairs of (user, assistant),
+        # so keep the last N*2 entries.
+        cap = config.AI_CONVERSATION_HISTORY * 2
+        messages.extend(history[-cap:] if len(history) > cap else history)
+    messages.append({"role": "user", "content": content})
+    return messages
 
 
-def fetch_ai_line(character, user_msg=None):
+def fetch_ai_line(character, user_msg=None, history=None):
     """Return an in-character AI line for `character`, or (None, None, False)
     on any failure (no key, network error, rate limit, parse error). The
     caller falls back to local dialogue. Caches hits to spare the daily quota.
@@ -103,23 +114,33 @@ def fetch_ai_line(character, user_msg=None):
         default (neutral/chuckle) if the model omitted/garbled the tag
       - cached: True if it came from the cache
     On any error returns (None, None, False).
+
+    `history` (optional) is the running conversation so the model can reply in
+    context (multi-turn). When history is given, the cache is BYPASSED — each
+    turn's reply depends on the full context, so a cached (character, input)
+    reply would be the wrong answer for a different conversation. Only cacheless
+    single-turn triggers (idle/no-input) still hit the cache.
     """
     if not is_configured():
         return None, None, False
 
     user_msg = (user_msg or "").strip()
+    has_history = bool(history)
     cache_key = f"{character}::{user_msg}"  # "" for idle triggers
 
-    # 1. Cache hit — don't burn quota on a repeat prompt.
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        mood, line = _split_mood_line(cached, character)
-        return line, mood, True
+    # 1. Cache hit — only for single-turn (no history). Multi-turn replies
+    #    depend on the full context, so caching by (character, input) would
+    #    return a stale reply from a different conversation.
+    if not has_history:
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            mood, line = _split_mood_line(cached, character)
+            return line, mood, True
 
     # 2. Call OpenRouter, trying the configured model then fallbacks on failure
     #    (free models get rate-limited upstream and rotate — never rely on one).
     key = user_settings.get_ai_key()
-    messages = build_messages(character, user_msg)
+    messages = build_messages(character, user_msg, history)
     models_to_try = [user_settings.get_ai_model()]
     for m in config.AI_MODEL_FALLBACKS:
         if m not in models_to_try:
@@ -136,7 +157,9 @@ def fetch_ai_line(character, user_msg=None):
     if not line:
         return None, None, False
 
-    _cache_put(cache_key, f"{mood}|{line}")
+    # Only cache single-turn replies (multi-turn context varies per request).
+    if not has_history:
+        _cache_put(cache_key, f"{mood}|{line}")
     return line, mood, False
 
 

@@ -159,7 +159,7 @@ CHOICE_DAILY_MAX = 2
 # matching what the UI calls "maxed" to what the line calls "formed".
 BOND_THRESHOLD = 99.5
 
-# --- Altar (sacrifice to the demon for prophecy) ---
+# --- Altar (sacrifice a soul to the demon for a talisman charge) ---
 ALTAR_SIZE = 200               # px — square altar window
 ALTAR_STAR_RADIUS = 80         # outer radius of the pentagram
 
@@ -228,7 +228,15 @@ AI_MODEL_FALLBACKS = [
 ]
 AI_TIMEOUT_S = 12.0          # LLM inference is slower than weather; give it room
 AI_MAX_TOKENS = 80           # keep lines short (saves free-tier quota)
+AI_CONVERSATION_HISTORY = 10  # max prior turns kept for multi-turn AI chat (each
+                              # turn = a user + assistant message; capped so the
+                              # free-tier token limit isn't blown -> 429)
 AI_CACHE_PATH = ROOT_DIR / "data" / ".ai_cache.json"
+
+# --- Group chat (social-app-style IM window) ---
+GROUP_CHAT_W = 480                # window width
+GROUP_CHAT_H = 560                # window height
+GROUP_CHAT_BUBBLE_MAX_W = 340    # px — wrap text past this (bubbles)
 
 # --- AI chat UI images (the character-selection background + portraits) ---
 # These live in the project's AICHAT/ folder. Users can swap them for their

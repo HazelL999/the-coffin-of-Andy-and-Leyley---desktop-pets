@@ -10,35 +10,10 @@ Aqua's native button bevel can't wash it out.
 
 import tkinter as tk
 
-from PIL import Image, ImageTk
-
 import config
 import theme
 
-_BG = (0x14, 0x14, 0x14)  # dialog background, matched to theme.BG for sprite compositing
 _SPRITE_SIZE = config.PLACEHOLDER_SIZE
-
-
-def _load_sprite(character, mood):
-    """Load a sprite PhotoImage composited over the dialog bg (not magenta-
-    baked — this is a normal opaque window). Falls back to neutral."""
-    folder = config.ASSETS_DIR / character / mood
-    from PIL import Image as _Img
-    im = None
-    try:
-        pngs = sorted(p for p in folder.glob("*.png"))
-        if pngs:
-            im = _Img.open(pngs[0]).convert("RGBA")
-    except Exception:
-        im = None
-    if im is None:
-        default = "neutral" if character == "andrew" else "chuckle"
-        if mood != default:
-            return _load_sprite(character, default)
-        return None
-    bg_img = _Img.new("RGBA", im.size, _BG + (255,))
-    composed = Image.alpha_composite(bg_img, im).convert("RGB")
-    return ImageTk.PhotoImage(composed)
 
 
 def open_choice_dialog(root, character, mood, question, options, on_choice):
@@ -59,7 +34,7 @@ def open_choice_dialog(root, character, mood, question, options, on_choice):
     win.config(bg=theme.BG)
 
     # Sprite at top.
-    photo = _load_sprite(character, mood)
+    photo = theme.sprite_over_bg(character, mood)
     if photo:
         sprite_lbl = tk.Label(win, image=photo, bg=theme.BG, bd=0)
         sprite_lbl.image = photo  # keep ref

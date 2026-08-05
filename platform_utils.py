@@ -201,7 +201,7 @@ def bind_context_menu(win, handler, canvas=None):
 # SourceAtop). The sublayer's hitTest_ returns nil so mouse events fall
 # through to the Tk Canvas — drag/poke keep working over the sprite.
 #
-# Verified by mac_gate_test.py: NSImage visible on transparent TKWindow, and
+# Verified empirically: NSImage is visible on a transparent TKWindow, and
 # clicks on the image region still trigger Tk Canvas <Button-1>.
 # ---------------------------------------------------------------------------
 

@@ -59,8 +59,6 @@ class DialogueStore:
         self._drag_dialogues: dict = {}
         # list[list[DialogueBeat]] — longer "skit" scenes auto-played on a timer
         self._scenes: List[List[DialogueBeat]] = []
-        # list[list[DialogueBeat]] — prophecy lines spoken after a sacrifice
-        self._prophecies: List[List[DialogueBeat]] = []
         # Environment-triggered lines:
         # period ("morning"/"evening") -> list[DialogueBeat] (single-beat)
         self._greetings: dict = {"morning": [], "evening": [], "late_night": []}
@@ -178,18 +176,6 @@ class DialogueStore:
             beats = _parse_beats(seq, valid_chars, valid_moods)
             if len(beats) == len(seq):
                 store._scenes.append(beats)
-
-        # Prophecy lines: spoken after a soul is sacrificed at the altar.
-        prophecies = data.get("prophecy", []) if isinstance(data, dict) else []
-        for entry in prophecies:
-            if not isinstance(entry, dict):
-                continue
-            seq = entry.get("sequence")
-            if not isinstance(seq, list) or not seq:
-                continue
-            beats = _parse_beats(seq, valid_chars, valid_moods)
-            if len(beats) == len(seq):
-                store._prophecies.append(beats)
 
         # --- Environment-triggered lines ---
         # Morning/evening greetings: single-beat arrays, played at first launch
@@ -367,14 +353,6 @@ class DialogueStore:
             return None
         rng = rng or random
         return rng.choices(self._scenes, k=1)[0]
-
-    def random_prophecy(self, rng: Optional[random.Random] = None
-                        ) -> Optional[List[DialogueBeat]]:
-        """Pick a random prophecy sequence (spoken after a sacrifice)."""
-        if not self._prophecies:
-            return None
-        rng = rng or random
-        return rng.choices(self._prophecies, k=1)[0]
 
     # --- Environment-triggered lines ---
 
