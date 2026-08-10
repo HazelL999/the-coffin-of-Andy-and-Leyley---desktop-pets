@@ -3,20 +3,20 @@
 Three reactive layers, all failing silently so the app never crashes on a
 missing file or unreachable network:
 
-1. **Startup greeting** — at first launch of the day, pick a morning/evening
+1. **Startup greeting** -- at first launch of the day, pick a morning/evening
    line (or a fixed holiday line if today's MM-DD matches). "First launch of
    the day" is persisted across restarts via a tiny state file: the last
    greeted date is written after greeting, and a launch whose date differs
    greets again.
-2. **Weather** — Open-Meteo (no API key) polled every ENV_POLL_INTERVAL_S.
+2. **Weather** -- Open-Meteo (no API key) polled every ENV_POLL_INTERVAL_S.
    The WMO weather_code is bucketed into rain/overcast/clear. A line is
    spoken only when the *category* changes (steady rain doesn't repeat).
-3. **TODO** — the local todo.txt (one open item per non-comment line) is
+3. **TODO** -- the local todo.txt (one open item per non-comment line) is
    read on the same poll cadence. A reminder sequence fires only when the
    open-item count *increases* (finishing items is celebrated with silence).
 
-All speech goes through pet.speak(DialogueLine(...)) — the same entry point
-the interaction director and altar use — so bubbles, moods, and freeze
+All speech goes through pet.speak(DialogueLine(...)) -- the same entry point
+the interaction director and altar use -- so bubbles, moods, and freeze
 behavior are inherited for free.
 """
 
@@ -75,7 +75,7 @@ class EnvContext:
         # Late-night state for change detection (fire once on entering night).
         # Initialized to the launch-time truth: if the app starts INSIDE the
         # late-night window, treat the night as already-announced so the first
-        # poll() doesn't fire a late-night line 10 minutes after startup —
+        # poll() doesn't fire a late-night line 10 minutes after startup --
         # the startup greeting already covered this hour. Only a transition
         # INTO the window during a running session fires the line.
         start_hour = datetime.now().hour
@@ -91,7 +91,7 @@ class EnvContext:
         return None
 
     def _any_active(self):
-        """True if an interaction scene is mid-flight — don't collide with it."""
+        """True if an interaction scene is mid-flight -- don't collide with it."""
         d = self.director
         return bool(d and getattr(d, "active", False))
 
@@ -208,7 +208,7 @@ class EnvContext:
     def _check_late_night(self):
         """Fire a one-off insomnia line when the app crosses into late night
         (23:00-5:00). Only triggers on the *transition* into night, not every
-        poll — _is_late_night tracks whether we've already fired for this
+        poll -- _is_late_night tracks whether we've already fired for this
         night session."""
         hour = datetime.now().hour
         is_night = hour >= config.LATE_NIGHT_START or hour < config.LATE_NIGHT_END
@@ -224,13 +224,13 @@ class EnvContext:
     def _check_weather(self):
         cat = self._fetch_weather_category()
         if cat is None:
-            return  # network failed OR unmapped code — silent
+            return  # network failed OR unmapped code -- silent
         prev = self._last_weather_cat
         self._last_weather_cat = cat
         if cat == prev:
             return  # no change -> no line
         if prev is None:
-            return  # baseline read — don't fire on the very first sighting
+            return  # baseline read -- don't fire on the very first sighting
         # Category genuinely changed (e.g. clear -> rain). Say a line for it.
         beat = self.store.random_weather(cat, self.rng)
         if beat:
@@ -259,11 +259,11 @@ class EnvContext:
     def _check_todo(self):
         count = self._count_open_todos()
         if count is None:
-            return  # file missing/unreadable — silent
+            return  # file missing/unreadable -- silent
         prev = self._last_todo_count
         self._last_todo_count = count
         if prev < 0:
-            return  # baseline read — don't fire on first sight
+            return  # baseline read -- don't fire on first sight
         if count > prev:
             seq = self.store.random_todo_reminder(self.rng)
             if seq:
@@ -271,7 +271,9 @@ class EnvContext:
 
     @staticmethod
     def _count_open_todos():
-        """Count non-comment, non-blank lines in todo.txt. None if unreadable."""
+        """Count open (unchecked) todo items in todo.txt. A line is checked if
+        it starts with '[x]' (case-insensitive). Comment/blank lines are skipped.
+        None if the file is unreadable."""
         try:
             with open(config.TODO_PATH, "r", encoding="utf-8") as f:
                 lines = f.readlines()
@@ -282,6 +284,8 @@ class EnvContext:
             s = ln.strip()
             if not s or s.startswith("#"):
                 continue
+            if s.lower().startswith("[x]"):
+                continue  # completed -- doesn't count as open
             n += 1
         return n
 

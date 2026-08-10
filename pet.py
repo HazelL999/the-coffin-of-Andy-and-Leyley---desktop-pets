@@ -34,7 +34,7 @@ class Pet:
                  on_poked=None, on_check_state=None, on_summon_altar=None,
                  on_open_backpack=None, on_set_city=None, on_ai_chat=None,
                  on_toggle_music=None, on_toggle_companion=None,
-                 on_watch_tv=None):
+                 on_watch_tv=None, on_catch_soul=None, on_open_todo=None):
         self.character = character
         self.loader = loader
         self.dialogue = dialogue_store
@@ -50,10 +50,12 @@ class Pet:
         self.on_summon_altar = on_summon_altar  # right-click "Summon altar" handler
         self.on_open_backpack = on_open_backpack  # right-click "Backpack" handler
         self.on_set_city = on_set_city  # right-click "Set city" (weather) handler
-        self.on_ai_chat = on_ai_chat  # right-click "AI chat…" handler
+        self.on_ai_chat = on_ai_chat  # right-click "AI chat..." handler
         self.on_toggle_music = on_toggle_music  # right-click "Music on/off" handler
         self.on_toggle_companion = on_toggle_companion  # right-click "Companion mode"
         self.on_watch_tv = on_watch_tv  # right-click "Watch TV"
+        self.on_catch_soul = on_catch_soul  # right-click "Catch a soul"
+        self.on_open_todo = on_open_todo    # right-click "Todo..."
         self.partner_ref = None   # the other pet (set by PetApp after both start)
         self.codep = None         # CodependencyState (set by PetApp)
 
@@ -127,7 +129,7 @@ class Pet:
         # Head room for the speech bubble. Tall enough to hold a 5-line bubble
         # (~70px text + padding + tail) without the box getting clamped short
         # and letting text spill past the box onto the transparent canvas
-        # (which turns the spillover's anti-aliased edges purple — they mix
+        # (which turns the spillover's anti-aliased edges purple -- they mix
         # with the magenta transparent-color). The bubble still hugs the
         # sprite's head via the by1 clamp in _show_bubble; this just reserves
         # the vertical space above it.
@@ -328,7 +330,7 @@ class Pet:
         self._update_animation(dt)
 
     def _update_movement(self, dt):
-        # While frozen (someone is speaking), hold position — no wander, no
+        # While frozen (someone is speaking), hold position -- no wander, no
         # walking toward a target. Window still repositioned so drag/external
         # moves stay visible. Expires automatically when _frozen_until passes.
         now = time.monotonic()
@@ -342,7 +344,7 @@ class Pet:
             self._update_companion(dt)
             self._move_window()
             return
-        # Movement toggled off: stop in place — no wandering steps, no
+        # Movement toggled off: stop in place -- no wandering steps, no
         # idle-timer expiring into a wander. Sleep/wake, animation, and
         # window refresh still run so the pet keeps its face and stays
         # draggable. State is forced to IDLE so any in-progress walk ends.
@@ -427,7 +429,7 @@ class Pet:
           Ashley 00-10:  merely idle -> sleeps.
         Outside the window the accumulator resets and they never sleep. A
         sleeping pet wakes when its wake condition trips (Andy: Ashley moves
-        away; both: poked / spoken to). Companion mode never sleeps — the pet
+        away; both: poked / spoken to). Companion mode never sleeps -- the pet
         is parked and should stay present."""
         if self.companion_mode:
             if self.state == self.STATE_SLEEPING:
@@ -536,7 +538,7 @@ class Pet:
         if not self.canvas or not self.codep:
             return
         self._hide_state_icon()
-        label, emoji = self.codep.mental_state(self.character)
+        label, emoji = self.codep.codep_state(self.character)
         ix = self.sprite_cx
         iy = self.sprite_cy - config.PLACEHOLDER_SIZE // 2 - 16
         item = self.canvas.create_text(ix, iy, text=emoji,
@@ -582,12 +584,16 @@ class Pet:
         if not self.win:
             return
         size = config.PLACEHOLDER_SIZE
-        # Window top-left so the SPRITE (which is centered horizontally at the
-        # bottom of the window) lands at (self.x, self.y). The bubble band sits
-        # above the sprite and may extend slightly above the screen top, which is
-        # fine (the bubble is a transient overlay).
         wx = int(self.x - (self.win_w - size) / 2)
         wy = int(self.y - self.bubble_band)
+        # Skip the geometry call if the window hasn't moved -- Tkinter's
+        # geometry() triggers a Windows WM redraw every call, so calling it
+        # every frame (even when idle/asleep) wastes CPU and can stutter on
+        # low-end machines. Two pets × 30fps = 60 geometry calls/s otherwise.
+        if getattr(self, "_last_wx", None) == wx and getattr(self, "_last_wy", None) == wy:
+            return
+        self._last_wx = wx
+        self._last_wy = wy
         try:
             self.win.geometry(f"+{wx}+{wy}")
         except tk.TclError:
@@ -654,7 +660,7 @@ class Pet:
     def _update_companion(self, dt):
         """Park at the companion anchor with a gentle sine float (both x and y,
         phase-offset per pet so the two don't bob in lockstep). No wander, no
-        walking toward a target — the anchor is set once when the mode turns on."""
+        walking toward a target -- the anchor is set once when the mode turns on."""
         if self._comp_anchor is None:
             return
         self._comp_phase += dt * (2 * math.pi / config.COMPANION_FLOAT_PERIOD)
@@ -682,7 +688,7 @@ class Pet:
             self.idle_timer = self.rng.uniform(*config.IDLE_PAUSE_RANGE)
 
     def _toggle_companion(self):
-        """Right-click "Companion mode" handler — delegates to PetApp so it can
+        """Right-click "Companion mode" handler -- delegates to PetApp so it can
         coordinate both pets (anchors them side by side and start the observer)."""
         if self.on_toggle_companion:
             self.on_toggle_companion(self)
@@ -756,7 +762,7 @@ class Pet:
         # Speaking wakes a sleeping pet.
         if self.state == self.STATE_SLEEPING:
             self._wake_up()
-        # Mood is set ONCE here, even for a multi-bubble monologue — the
+        # Mood is set ONCE here, even for a multi-bubble monologue -- the
         # expression stays while every bubble of the line shows in turn.
         self.set_mood(line.mood)
         self.last_spoke = time.monotonic()
@@ -836,7 +842,7 @@ class Pet:
         # (e.g. AI chat) or when a partner moves away (see _update_sleep).
         if self.state == self.STATE_SLEEPING:
             return
-        # While frozen (someone is speaking — a long dialogue exchange or a
+        # While frozen (someone is speaking -- a long dialogue exchange or a
         # partner's line), hold the current mood and position so the non-
         # speaking pet doesn't drift to a random face mid-conversation. Only
         # wander/expression are muted; a queued dialogue is already gated by
@@ -912,33 +918,44 @@ class Pet:
     # ---------- context menu ----------
     def _on_context(self, event):
         menu = theme.style_menu(tk.Menu(self.win, tearoff=0))
+
+        # --- Status & inventory ---
         if self.on_check_state:
             menu.add_command(label="Check state",
                              command=lambda: self.on_check_state(self))
-        if self.on_summon_altar:
-            menu.add_command(label="Summon altar",
-                             command=lambda: self.on_summon_altar(self))
         if self.on_open_backpack:
             menu.add_command(label="Backpack",
                              command=self.on_open_backpack)
+        menu.add_separator()
+
+        # --- Interact ---
+        if self.on_summon_altar:
+            menu.add_command(label="Summon altar",
+                             command=lambda: self.on_summon_altar(self))
+        if self.on_catch_soul:
+            menu.add_command(label="Catch a soul...",
+                             command=lambda: self.on_catch_soul(self))
         if self.on_watch_tv:
             menu.add_command(label="Watch TV",
                              command=lambda: self.on_watch_tv(self))
         if self.on_ai_chat:
             chat_menu = theme.style_menu(tk.Menu(menu, tearoff=0))
-            chat_menu.add_command(label="One-on-one chat…",
+            chat_menu.add_command(label="One-on-one chat...",
                                   command=lambda: self.on_ai_chat(self, "sprite"))
-            chat_menu.add_command(label="Group chat…",
+            chat_menu.add_command(label="Group chat...",
                                   command=lambda: self.on_ai_chat(self, "group"))
             menu.add_cascade(label="AI chat", menu=chat_menu)
-        if self.on_toggle_companion:
-            menu.add_command(label="Companion mode: On/Off",
-                             command=self._toggle_companion)
+        if self.on_open_todo:
+            menu.add_command(label="Todo...",
+                             command=self.on_open_todo)
 
-        # --- Settings submenu ---
+        # --- Settings ---
         settings = theme.style_menu(tk.Menu(menu, tearoff=0))
+        if self.on_toggle_companion:
+            settings.add_command(label="Companion mode: On/Off",
+                                 command=self._toggle_companion)
         if self.on_set_city:
-            settings.add_command(label="Set city…",
+            settings.add_command(label="Set city...",
                                 command=self.on_set_city)
         if self.on_toggle_music:
             settings.add_command(label="Music: On/Off",

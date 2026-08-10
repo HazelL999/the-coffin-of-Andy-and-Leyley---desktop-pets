@@ -1,27 +1,39 @@
-"""Codependency state — the core driver for Andy & Leyley's behavior.
+"""Codependency + mental state -- the core drivers for Andy & Leyley.
 
-Each character has a codependency value 0..100 (starts at 50, "passive/
-following"). It moves with interaction: closeness raises it, distance
-changes it oppositely (Andy grows needier, Ashley spirals), clicking
-Andrew angers Ashley, dragging one onto the other bonds them.
+Each character has TWO independent 0..100 values:
 
-The value drives:
-- Andy: <20 independent (pulls away), 20-70 passive, >70 dependent (seeks
-  Ashley out — and can only sleep pressed against her).
-- Ashley: <20 unhinged (meltdown moods), 20-70 following, >70 serene
-  (quiet smile).
+1. **Codependency** (existing): how glued they are to each other. Drives
+   proximity behavior, the red bond line, sleep posture. Starts at 50.
 
-`mental_state` derives a short label + emoji icon for the Check-state UI.
+2. **Mental state** (new): each character's individual psychological
+   stability, INDEPENDENT of codependency. Starts at 60. Drives the Realm's
+   third-eye outcome (who kills whom when the road breaks). Has its own
+   sources of change -- NOT tied to codependency deltas.
+
+Mental state bands differ per character (they break differently):
+
+  Andrew:   0-15 breaking | 15-50 frayed | 50-80 stable | 80-100 numb
+  Ashley:   0-10 pleading | 10-40 furious | 40-80 stable | 80-100 negligent
 """
 
 CLAMP_MIN = 0.0
 CLAMP_MAX = 100.0
 
-# Level thresholds (upper bound of each band).
+# --- Codependency bands ---
 INDEPENDENT = 20.0   # Andy: below this = independent
 DEPENDENT = 70.0     # Andy: above this = dependent
 UNHINGED = 20.0      # Ashley: below this = unhinged
 SERENE = 70.0        # Ashley: above this = serene
+
+# --- Mental state bands (per character) ---
+# Andrew
+ANDREW_BREAKING = 15.0
+ANDREW_FRAYED = 50.0
+ANDREW_STABLE = 80.0
+# Ashley
+ASHLEY_PLEADING = 10.0
+ASHLEY_FURIOUS = 40.0
+ASHLEY_STABLE = 80.0
 
 
 def _clamp(v):
@@ -31,9 +43,11 @@ def _clamp(v):
 class CodependencyState:
     def __init__(self):
         self.values = {"andrew": 50.0, "ashley": 50.0}
-        # recent delta direction, for mental_state nuance
-        self._drift = {"andrew": 0.0, "ashley": 0.0}
+        # Mental state (independent of codependency). Starts slightly below
+        # the stable midline so there's room to grow or erode.
+        self.mental = {"andrew": 60.0, "ashley": 60.0}
 
+    # --- codependency ---
     def get(self, character):
         return self.values.get(character, 50.0)
 
@@ -43,7 +57,6 @@ class CodependencyState:
         old = self.values.get(character, 50.0)
         new = _clamp(old + delta)
         self.values[character] = new
-        self._drift[character] = new - old
         return new
 
     def level(self, character):
@@ -62,9 +75,9 @@ class CodependencyState:
             return "serene"
         return "following"
 
-    def mental_state(self, character):
-        """Return (label, emoji) describing current mental state, derived
-        from codependency level + recent drift."""
+    def codep_state(self, character):
+        """Return (label, emoji) describing current codependency band.
+        This is the codependency axis (not the independent mental_state axis)."""
         v = self.get(character)
         lvl = self.level(character)
         if character == "andrew":
@@ -80,6 +93,47 @@ class CodependencyState:
             return ("serene", "😊")
         return ("stable", "❤")
 
+    # --- mental state (independent axis) ---
+    def get_mental(self, character):
+        """Current mental state value 0..100."""
+        return self.mental.get(character, 60.0)
+
+    def adjust_mental(self, character, delta):
+        """Change a character's mental state by delta (clamped 0..100).
+        Independent of codependency. Returns the new value."""
+        old = self.mental.get(character, 60.0)
+        new = _clamp(old + delta)
+        self.mental[character] = new
+        return new
+
+    def mental_label(self, character):
+        """Band label for the character's mental state (per-character bands)."""
+        v = self.get_mental(character)
+        if character == "andrew":
+            if v < ANDREW_BREAKING:
+                return "breaking"
+            if v < ANDREW_FRAYED:
+                return "frayed"
+            if v < ANDREW_STABLE:
+                return "stable"
+            return "numb"
+        # ashley
+        if v < ASHLEY_PLEADING:
+            return "pleading"
+        if v < ASHLEY_FURIOUS:
+            return "furious"
+        if v < ASHLEY_STABLE:
+            return "stable"
+        return "negligent"
+
+    def mental_emoji(self, character):
+        """Emoji for the mental state label."""
+        label = self.mental_label(character)
+        return {
+            "breaking": "🔪", "frayed": "💔", "stable": "❤", "numb": "🧊",
+            "pleading": "🔫", "furious": "💢", "negligent": "😏",
+        }.get(label, "❤")
+
     def tick(self, dt, distance_band):
         """Apply proximity drift to both characters. Called every tick by
         PetApp with the current inter-pet distance band.
@@ -89,7 +143,7 @@ class CodependencyState:
         plus the old discrete bonuses (+1 per scene, +5 per choice/drag)
         drove the value to 99.5 in hours. The pets spend most of their time
         at 'close' (kept ~one body-length apart by MIN_PARTNER_DISTANCE), so
-        'close' is now neutral — the bond only RISES when genuinely pressed
+        'close' is now neutral -- the bond only RISES when genuinely pressed
         together (very_near) and only COOLS when genuinely separated (far/
         very_far). That makes the rate depend on how much time they actually
         spend smothering vs. wandering apart, with the trimmed discrete

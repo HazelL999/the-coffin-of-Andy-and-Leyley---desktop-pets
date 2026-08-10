@@ -6,7 +6,7 @@ The store reads from an external JSON so users can swap in verbatim game quotes.
 
 A line's `text` may be a string (single bubble) or a list of strings (a
 multi-bubble monologue: each bubble shows in turn, mood/expression set only
-once — see Pet.speak). The optional top-level `dialogues` array holds fixed
+once -- see Pet.speak). The optional top-level `dialogues` array holds fixed
 multi-line exchange sequences the InteractionDirector can play out.
 """
 
@@ -53,11 +53,11 @@ class DialogueStore:
         self._by_key = {}
         # character -> list[DialogueLine] (all moods)
         self._by_char = {c: [] for c in config.CHARACTERS}
-        # list[list[DialogueBeat]] — fixed exchange sequences
+        # list[list[DialogueBeat]] -- fixed exchange sequences
         self._dialogues: List[List[DialogueBeat]] = []
-        # dragged-character -> list[list[DialogueBeat]] — drag-onto scenes
+        # dragged-character -> list[list[DialogueBeat]] -- drag-onto scenes
         self._drag_dialogues: dict = {}
-        # list[list[DialogueBeat]] — longer "skit" scenes auto-played on a timer
+        # list[list[DialogueBeat]] -- longer "skit" scenes auto-played on a timer
         self._scenes: List[List[DialogueBeat]] = []
         # Environment-triggered lines:
         # period ("morning"/"evening") -> list[DialogueBeat] (single-beat)
@@ -66,15 +66,15 @@ class DialogueStore:
         self._holidays: dict = {}
         # weather category ("rain"/"overcast"/"clear") -> list[DialogueBeat]
         self._weather: dict = {}
-        # list[list[DialogueBeat]] — Ashley reminds / Andrew deflects (todo grew)
+        # list[list[DialogueBeat]] -- Ashley reminds / Andrew deflects (todo grew)
         self._todo_reminders: List[List[DialogueBeat]] = []
-        # list[list[DialogueBeat]] — reunion sequences on long-absence relaunch
+        # list[list[DialogueBeat]] -- reunion sequences on long-absence relaunch
         self._reunions: List[List[DialogueBeat]] = []
         # category ("coding"/"browsing"/"video"/...) -> list[list[DialogueBeat]]
         # Companion-mode lines: spoken when the frontmost app's category
         # changes. Each entry has a `category` + a `sequence` of beats.
         self._companion: dict = {}
-        # list[dict] — player-choice scenes (raw dicts: speaker/question/options)
+        # list[dict] -- player-choice scenes (raw dicts: speaker/question/options)
         self._choices: list = []
 
     @classmethod
@@ -283,7 +283,7 @@ class DialogueStore:
                     rm = resp.get("mood")
                     rt = resp.get("text")
                     if rc not in valid_chars or not rm or not rt:
-                        resp = None  # invalid response — caller skips it
+                        resp = None  # invalid response -- caller skips it
                 codep = opt.get("codep")
                 if not isinstance(codep, dict):
                     codep = {}
@@ -406,7 +406,7 @@ class DialogueStore:
                          ) -> Optional[List[DialogueBeat]]:
         """Pick a random companion-mode line for the given app category
         (coding/browsing/video/...). Returns None if no lines are configured
-        for that category — the caller treats that as silent."""
+        for that category -- the caller treats that as silent."""
         pool = self._companion.get(category)
         if not pool:
             return None

@@ -1,16 +1,16 @@
 """Companion mode: the two pets sit quietly in the screen's bottom-right
-corner, gently float, and watch what the user is doing — speaking a line
+corner, gently float, and watch what the user is doing -- speaking a line
 when the frontmost app's *category* changes (coding, browsing, video...).
 
 Two halves:
 
-1. ``foreground_app_name()`` — read the OS frontmost app/window name.
+1. ``foreground_app_name()`` -- read the OS frontmost app/window name.
    Windows: ctypes GetForegroundWindow + GetWindowTextW. macOS: PyObjC
    NSWorkspace.frontmostApplication().localizedName(). All failures degrade
-   silently to None (locked screen, no permission, no pyobjc) — never crash,
+   silently to None (locked screen, no permission, no pyobjc) -- never crash,
    matching the env_context "silent on failure" pattern.
 
-2. ``CompanionObserver`` — throttled poll that reads the frontmost app,
+2. ``CompanionObserver`` -- throttled poll that reads the frontmost app,
    buckets it via ``_categorize``, and speaks a category-matched line only
    on a change (steady browsing doesn't repeat). Skips if a scene/dialogue is
    mid-flight (reuses the director.active guard).
@@ -95,21 +95,22 @@ def _foreground_mac():
 _CATEGORY_KEYWORDS = [
     ("coding", ["code", "vscode", "visual studio", "pycharm", "idea",
                 "sublime", "neovim", "vim", "neovide", "terminal",
-                "powershell", "cmd", "git", "devenv", "xcode", "cursor"]),
+                "powershell", "cmd", "git", "devenv", "xcode", "cursor",
+                "python", "idle", "jupyter", "spyder", "thonny"]),
     ("gaming", ["steam", "epic games", "battle.net", "riot", "minecraft",
                "genshin", "league of legends", "dota", "overwatch",
-               "skyrim"]),
+               "skyrim", "gog", "ubisoft", "ea desktop", "origin"]),
     ("video", ["bilibili", "youtube", "netflix", "twitch", "iqiyi",
-              "youku", "腾讯视频", "qq video", "优酷", "爱奇艺", "potplayer",
+              "youku", "qq video", "potplayer",
               "vlc", "mpv"]),
-    ("music", ["spotify", "foobar", "aimp", "网易云", "netease", "qqmusic",
-               "酷狗", "itunes", "music"]),
-    ("chat", ["微信", "wechat", "qq", "telegram", "discord", "slack",
-              "teams", "飞书", "lark", "钉钉", "dingtalk"]),
+    ("music", ["spotify", "foobar", "aimp", "netease", "qqmusic",
+               "itunes", "music"]),
+    ("chat", ["wechat", "qq", "telegram", "discord", "slack",
+              "teams"]),
     ("writing", ["word", "wps", "notion", "obsidian", "typora", "onenote",
-                 "pages", "日记", "memo", "notes"]),
+                 "pages", "memo", "notes"]),
     ("browsing", ["chrome", "firefox", "edge", "safari", "opera", "brave",
-                  "浏览器", "browser", "msedge"]),
+                  "browser", "msedge"]),
 ]
 
 
@@ -122,7 +123,7 @@ def _categorize(name):
         for kw in kws:
             if kw in name:
                 return cat
-    return "idle"  # unknown app — treat as generic idle/other
+    return "idle"  # unknown app -- treat as generic idle/other
 
 
 # --- observer ---
@@ -142,7 +143,7 @@ class CompanionObserver:
         self.store = store
         self.director = director
         self._last_poll = 0.0
-        # Last category seen — first poll sets the baseline without speaking
+        # Last category seen -- first poll sets the baseline without speaking
         # (so turning companion mode on doesn't immediately narrate whatever
         # was already open).
         self._last_cat = None
@@ -166,7 +167,7 @@ class CompanionObserver:
             return
         self._last_poll = now
         if self._any_active():
-            return  # a scene/exchange is mid-flight — don't talk over it
+            return  # a scene/exchange is mid-flight -- don't talk over it
         name = foreground_app_name()
         cat = _categorize(name)
         if self._first:
@@ -175,7 +176,7 @@ class CompanionObserver:
             self._last_cat = cat
             return
         if cat == self._last_cat:
-            return  # same category as last poll — no line (no spam)
+            return  # same category as last poll -- no line (no spam)
         self._last_cat = cat
         self._speak(cat)
 
@@ -186,7 +187,7 @@ class CompanionObserver:
         from dialogue import DialogueLine
         beats = self.store.random_companion(cat, self.rng)
         if not beats:
-            return  # no lines configured for this category — silent
+            return  # no lines configured for this category -- silent
         # Mirror env_context._play_sequence: root.after chain, independent of
         # the director's scheduling, skips if a scene starts mid-sequence.
         seq = list(beats)

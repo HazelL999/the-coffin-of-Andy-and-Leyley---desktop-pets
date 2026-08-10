@@ -33,13 +33,13 @@ def transparent_bg(transparent_color):
       that exact color out as transparent + click-through.
     - macOS: 'systemTransparent', a system color with alpha. macOS has no
       -transparentcolor; -transparent True only *allows* the content area to be
-      transparent — the real transparency comes from the Toplevel (and every
+      transparent -- the real transparency comes from the Toplevel (and every
       child widget, or its solid bg covers the transparency) being set to a
       color with alpha. 'systemTransparent' is the value Tk's wm man page
       names for this. Using the Windows magenta here would show as a solid
       magenta block (no color keying on macOS).
     - Linux/other: the transparent color (no real transparency; sprites sit
-      on a magenta block — best effort).
+      on a magenta block -- best effort).
     """
     if is_macos():
         return "systemTransparent"
@@ -75,7 +75,7 @@ def setup_window(win, transparent_color):
             used = False
         if not used:
             _setup_mac_nswindow(win)    # PyObjC fallback (best-effort)
-        # Toplevel bg must be an alpha-bearing system color (NOT "" — Tk treats
+        # Toplevel bg must be an alpha-bearing system color (NOT "" -- Tk treats
         # empty as the default grey, not transparent). Child widgets (Canvas)
         # must use the same via transparent_bg(), or their solid bg covers the
         # transparency. See transparent_bg() docstring.
@@ -92,7 +92,7 @@ def _setup_mac_nswindow(win):
         import AppKit  # noqa: F401
         import objc
     except Exception:
-        return  # pyobjc not installed — app still runs, just opaque-ish
+        return  # pyobjc not installed -- app still runs, just opaque-ish
     try:
         win.update_idletasks()
         window_id = win.winfo_id()
@@ -113,7 +113,7 @@ def _setup_mac_nswindow(win):
 def screen_bounds(root, use_virtual_desktop=False):
     """Return (x0, y0, x1, y1) of the usable screen area.
 
-    Default: the PRIMARY monitor via Tk's winfo_screenwidth/height — pets stay
+    Default: the PRIMARY monitor via Tk's winfo_screenwidth/height -- pets stay
     on the primary so they're always visible. Set use_virtual_desktop=True to
     let them roam across all monitors on Windows.
     """
@@ -143,8 +143,8 @@ def screen_bounds(root, use_virtual_desktop=False):
 def set_click_through(win, on):
     """macOS: toggle ignoring all mouse events. No-op on Windows (per-pixel
     click-through there comes from -transparentcolor). On macOS a transparent
-    window STILL receives mouse events by default — there's no auto
-    click-through for transparent regions — so a full-screen overlay (like
+    window STILL receives mouse events by default -- there's no auto
+    click-through for transparent regions -- so a full-screen overlay (like
     the bond line window) must call this with on=True or it swallows every
     click on the desktop."""
     if not is_macos():
@@ -161,7 +161,7 @@ def bind_context_menu(win, handler, canvas=None):
     """Bind right-click cross-platform to call handler(event).
 
     Windows/Linux: Button-3. macOS: Button-2 and Ctrl-Button-1. (A plain
-    double-click is NOT bound — see note below.)
+    double-click is NOT bound -- see note below.)
 
     On macOS, if `canvas` is given, also bind the same events to it: the
     sprite NSView sublayer can intercept rightMouseDown at the win level,
@@ -173,7 +173,7 @@ def bind_context_menu(win, handler, canvas=None):
     macOS (as a discoverable fallback when a trackpad has no right-button
     gesture Tk maps to Button-2). It was removed because a double-click
     also fires two <Button-1> poke events, and the menu's tk_popup grab
-    interrupts the click sequence — so the 3-poke rage reaction could
+    interrupts the click sequence -- so the 3-poke rage reaction could
     never complete (the 2nd click opened the menu first). macOS still has
     two ways to open the menu: two-finger tap (right-click -> Button-2,
     forwarded by _SpriteLayer.rightMouseDown_) and Ctrl-click.
@@ -199,7 +199,7 @@ def bind_context_menu(win, handler, canvas=None):
 # Toplevel/Canvas/after/bind intact and draw sprites on a transparent NSView
 # sublayer of the Tk window's contentView, using NSImage (source-over, not
 # SourceAtop). The sublayer's hitTest_ returns nil so mouse events fall
-# through to the Tk Canvas — drag/poke keep working over the sprite.
+# through to the Tk Canvas -- drag/poke keep working over the sprite.
 #
 # Verified empirically: NSImage is visible on a transparent TKWindow, and
 # clicks on the image region still trigger Tk Canvas <Button-1>.
@@ -243,7 +243,7 @@ if _mac_pyobjc_available():
 
         hitTest_ returns None so the view never claims hit-testing. Plus we
         forward rightMouseDown (and other non-left mouse downs) to the next
-        responder — Mac trackpad two-finger tap fires rightMouseDown, which
+        responder -- Mac trackpad two-finger tap fires rightMouseDown, which
         bypasses hit-testing and would otherwise get swallowed by this
         subview, hiding the Tk Canvas <Button-2> menu binding. Forwarding
         lets it reach the Tk contentView like a normal right click.
@@ -267,7 +267,7 @@ if _mac_pyobjc_available():
                     _AppKit.NSCompositeSourceOver, 1.0)
 
         def hitTest_(self, point):
-            # Never claim hit-testing — let the Tk Canvas underneath get it.
+            # Never claim hit-testing -- let the Tk Canvas underneath get it.
             return None
 
         def rightMouseDown_(self, event):
@@ -289,7 +289,7 @@ def _resolve_ns_window(tk_win):
     winfo_id() returns Tk's internal MacDrawable*, not the NSWindow
     windowNumber, so windowWithWindowNumber_ returns None. Fall back to
     NSApp.orderedWindows() and match by frame size AND origin. Size alone
-    is not enough — two pet windows have identical size but different
+    is not enough -- two pet windows have identical size but different
     positions, so a size-only match would attach both sprite bridges to the
     same NSWindow. Cocoa's frame origin is bottom-left; Tk's winfo_x/y is
     top-left, so convert: cocoa_origin_y = screen_h - tk_y - win_h.

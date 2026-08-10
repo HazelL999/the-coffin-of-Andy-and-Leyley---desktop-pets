@@ -241,7 +241,7 @@ class AssetLoader:
             frames = None
 
         if not frames:
-            # placeholder — one frame, still gets facing flip (symmetric, no-op)
+            # placeholder -- one frame, still gets facing flip (symmetric, no-op)
             ph = _make_placeholder(character, mood, config.PLACEHOLDER_SIZE,
                                    self.transparent_rgb, self.bake_windows)
             right, left, durations, pil_r, pil_l = _to_photoimages(

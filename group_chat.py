@@ -2,7 +2,7 @@
 player, Andrew, and Ashley all talk together. Pure message stream (no
 sprites), dark bubbles, bottom input bar. The player sends one line and BOTH
 pets reply (each its own AI conversation history, so they stay in character
-and remember context). Closing the window drops all history — no
+and remember context). Closing the window drops all history -- no
 persistence, starts fresh each session.
 
 Reuses ai_chat.fetch_ai_line (already multi-turn via history=), ai_dialog's
@@ -39,7 +39,7 @@ def open_group_chat(root, pets, director=None):
 
     # --- message stream: a scrollable Text widget (the IM pattern) ---
     # Text is the most reliable Tk widget for a scrolling message log with
-    # colored text and word-wrap — no Canvas+inner-Frame width-tracking bugs.
+    # colored text and word-wrap -- no Canvas+inner-Frame width-tracking bugs.
     msg = tk.Text(win, bd=0, highlightthickness=0, bg=theme.BG,
                  fg=theme.FG, font=(config.UI_FONT, 10),
                  wrap="word", spacing1=2, spacing2=4, spacing3=2,
@@ -91,7 +91,7 @@ def open_group_chat(root, pets, director=None):
         _insert_text(text, "sys")
 
     _add_system("You're in a group chat with Andrew and Ashley. "
-                "Say anything — they'll both reply.")
+                "Say anything -- they'll both reply.")
 
     # --- input bar (bottom) ---
     bar = tk.Frame(win, bg=theme.BG)

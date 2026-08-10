@@ -5,7 +5,7 @@ Two canvas modes in one window:
     button under each portrait.
   - Sprite mode (after selecting): the scene image disappears, the character's
     sprite (neutral) is shown centered, and AI replies render as a rounded
-    speech bubble *below* the sprite — full vertical room, no clipping. The
+    speech bubble *below* the sprite -- full vertical room, no clipping. The
     sprite swaps to the mood matching each reply.
 
 Art is user-supplied (config.AICHAT_DIR + assets/<character>/<mood>/).
@@ -20,7 +20,7 @@ import theme
 import user_settings
 from PIL import Image, ImageTk
 
-_SPRITE_SIZE = config.PLACEHOLDER_SIZE  # 128 — matches the desktop pet sprite
+_SPRITE_SIZE = config.PLACEHOLDER_SIZE  # 128 -- matches the desktop pet sprite
 
 
 class _ImageCache:
@@ -46,7 +46,7 @@ class _ImageCache:
 
     def sprite(self, character, mood):
         """A sprite PhotoImage for (character, mood), alpha-composited over the
-        dialog's dark background (NOT magenta-baked — this is a normal opaque
+        dialog's dark background (NOT magenta-baked -- this is a normal opaque
         window, so we composite to the real bg color per the project rule).
 
         If the character has no art folder for this mood, falls back to the
@@ -123,7 +123,7 @@ def open_ai_dialog(root, pet, director=None):
 
     def _sprite_photo_for(character, mood):
         """A sprite PhotoImage for (character, mood), composited over the
-        dialog's dark bg (not magenta-baked — this is a normal opaque window).
+        dialog's dark bg (not magenta-baked -- this is a normal opaque window).
         Falls back to neutral if the mood has no art."""
         photo = cache.sprite(character, mood)
         if photo is None:
@@ -199,10 +199,10 @@ def open_ai_dialog(root, pet, director=None):
         if busy["on"]:
             return
         selected["char"] = character
-        # Switching character starts a fresh conversation — the old history
+        # Switching character starts a fresh conversation -- the old history
         # was with a different persona, so it would confuse the new one.
         conversation.clear()
-        # Hide the "Talk to …" buttons once a character is chosen — they're
+        # Hide the "Talk to ..." buttons once a character is chosen -- they're
         # only for the initial pick and would clutter the sprite view.
         btns.pack_forget()
         # 1. Flash the talk-to scene image for 1.5s.
@@ -235,7 +235,7 @@ def open_ai_dialog(root, pet, director=None):
     # --- chat input bar (bottom) ---
     # disp is the name shown in the status bar. It must reflect the character
     # actually being talked to (selected), not pet.character (the pet the dialog
-    # was opened from) — opening AI chat from Ashley then selecting "Talk to
+    # was opened from) -- opening AI chat from Ashley then selecting "Talk to
     # Andrew" should show "Andrew said: ...", not "Ashley said: ...".
     def _disp_for(c):
         return config.CHARACTER_META.get(c, {}).get("display", c)
@@ -261,11 +261,11 @@ def open_ai_dialog(root, pet, director=None):
             if loc:
                 _set_sprite_mood(char, loc.mood)
                 _show_bubble(loc.text)
-            _set_status("No key — used a local line. Click ⚙ to enable AI.")
+            _set_status("No key -- used a local line. Click ⚙ to enable AI.")
             return
         busy["on"] = True
         btn.config(state="disabled")
-        _set_status("Generating…")
+        _set_status("Generating...")
 
         def worker():
             # Pass the running conversation so the model can reply in context
@@ -291,7 +291,7 @@ def open_ai_dialog(root, pet, director=None):
                     if loc:
                         _set_sprite_mood(char, loc.mood)
                         _show_bubble(loc.text)
-                    _set_status("AI unavailable — used a local line instead.")
+                    _set_status("AI unavailable -- used a local line instead.")
             root.after(0, done)
 
         threading.Thread(target=worker, daemon=True).start()

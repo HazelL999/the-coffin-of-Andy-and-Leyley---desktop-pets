@@ -4,7 +4,7 @@ across Win + macOS.
 
 The strict black bg + near-white text exists specifically because macOS Aqua
 renders native tk.Button/tk.Menu bevels that IGNORE bg/fg unless overridden
-— left to the theme default, buttons come out a washed grey that makes text
+-- left to the theme default, buttons come out a washed grey that makes text
 barely readable. style_button forces relief=flat/bd=0/highlightthickness=0
 to suppress that bevel; style_menu sets bg/fg/activebackground (Mac menus
 are native but honor those). Transparent sprite windows and the speech
@@ -12,7 +12,7 @@ bubble (white bg, dark text) are NOT UI surfaces and stay untouched.
 
 Also hosts the shared rounded-rectangle geometry helper used by both the
 desktop pet speech bubble (pet.py) and the AI-chat dialog bubble
-(ai_dialog.py) — previously duplicated in both.
+(ai_dialog.py) -- previously duplicated in both.
 """
 
 import math
@@ -29,7 +29,7 @@ BORDER = "#3a3f4a"        # outlines
 
 # Dialog background as an RGB tuple, for alpha-compositing sprites over it.
 # Equals BG above; opaque dialogs (AI chat, choice popup) composite transparent
-# sprite art over this color (NOT magenta-baked — that's only for transparent
+# sprite art over this color (NOT magenta-baked -- that's only for transparent
 # pet windows). Shared by ai_dialog and choice_dialog.
 BG_RGB = (0x14, 0x14, 0x14)
 
@@ -39,13 +39,13 @@ _DEFAULT_MOOD = {"andrew": "neutral", "ashley": "chuckle"}
 
 def sprite_over_bg(character, mood, bg_rgb=BG_RGB):
     """Load a sprite PhotoImage for (character, mood), alpha-composited over an
-    opaque dialog bg color (not magenta-baked — this is for normal opaque
+    opaque dialog bg color (not magenta-baked -- this is for normal opaque
     windows like the AI-chat / choice dialogs).
 
     Reads the first PNG in assets/<character>/<mood>/. Falls back to the
     character's default mood (neutral/chuckle) if the requested mood has no
     art; returns None if even the default is missing. Caching is the caller's
-    job — this always builds a fresh PhotoImage."""
+    job -- this always builds a fresh PhotoImage."""
     import config  # local import: config imports nothing from theme (no cycle)
     folder = config.ASSETS_DIR / character / mood
     im = None

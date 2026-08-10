@@ -14,7 +14,7 @@ import tkinter as tk
 
 def _today_str():
     """Current calendar date as YYYY-MM-DD (for per-day caps that roll over
-    at midnight). Local time — matches the greeting/sleep window logic."""
+    at midnight). Local time -- matches the greeting/sleep window logic."""
     return datetime.now().strftime("%Y-%m-%d")
 
 import config
@@ -37,7 +37,7 @@ class InteractionDirector:
     - "chase": Andrew chases Ashley; she sidesteps away; he catches up and
       the two exchange a line.
     In both, the pets end up one body-width apart, facing each other, then
-    speak (which also freezes them — see Pet.freeze_until).
+    speak (which also freezes them -- see Pet.freeze_until).
     """
 
     SCENE_WEIGHTS = {"cling": 2.0, "chase": 1.0, "scripted": 1.5, "scene": 0.8, "choice": 0.4}
@@ -265,7 +265,7 @@ class InteractionDirector:
         # After the approach walk, speaker asks the question, then popup opens.
         def ask():
             from dialogue import DialogueLine as DL
-            # Pick a mood that fits asking — neutral is safe for both.
+            # Pick a mood that fits asking -- neutral is safe for both.
             ask_mood = "neutral" if speaker_name == "andrew" else "chuckle"
             speaker.speak(DL(speaker_name, ask_mood, question))
             # Freeze both during the popup (speak already froze them; extend
@@ -339,7 +339,9 @@ class PetApp:
                       on_ai_chat=self._on_ai_chat,
                       on_toggle_music=self._on_toggle_music,
                       on_toggle_companion=self._toggle_companion,
-                      on_watch_tv=self._on_watch_tv)
+                      on_watch_tv=self._on_watch_tv,
+                      on_catch_soul=self._on_catch_soul,
+                      on_open_todo=self._on_open_todo)
             pet.start()
             self.pets.append(pet)
 
@@ -362,6 +364,20 @@ class PetApp:
         # restarts in the env-state file so a sacrifice isn't lost on quit.
         self.backpack = None
         self.talisman_charges = self._load_talisman_charges()
+        # Soul-catcher minigame counts: caught white souls feed the altar's
+        # sacrifice cost; picked flowers are a persistent backpack count. Both
+        # survive restart in the env-state file.
+        self.soul_count = self._load_soul_count()
+        self.flower_count = self._load_flower_count()
+        # Coin currency: earned +2 per soul sacrificed at the altar. Persists
+        # across restarts in the env-state file (a cosmetic counter for now).
+        self.coin_count = self._load_coin_count()
+        # Entity's debt: each time the demon says "You owe me one soul now,
+        # tar soul." (sacrifice with 0 souls), this ticks up. At 10 the
+        # entity's realm easter-egg scene opens, then the count resets.
+        self.entity_debt_count = self._load_entity_debt_count()
+        self.entity_realm = None
+        self.soul_game = None
 
         # Preload all moods so dropping art in mid-run still works (lazy cache).
         for char in config.CHARACTERS:
@@ -389,7 +405,7 @@ class PetApp:
         self.companion = CompanionObserver(self.root, self.pets, self.rng,
                                            self.dialogue, director=self.director)
 
-        # Background music: pygame.mixer looped playback. Best-effort — if
+        # Background music: pygame.mixer looped playback. Best-effort -- if
         # pygame isn't installed or no music files, the app runs silently.
         from music_player import MusicPlayer
         self.music = MusicPlayer()
@@ -472,7 +488,7 @@ class PetApp:
         red line between the two pets when their mutual codependency is high.
 
         Created once at startup (covering the whole primary screen) and never
-        resized — we only update the line's coordinates each tick. This avoids
+        resized -- we only update the line's coordinates each tick. This avoids
         the flicker and teardown cost of recreating an overlay window on every
         geometry change. The window is magenta-transparent like the pets, so its
         only visible pixel is the line itself.
@@ -481,7 +497,7 @@ class PetApp:
             win = tk.Toplevel(self.root)
             transparent_ok = platform_utils.setup_window(win, config.TRANSPARENT_COLOR)
             if not transparent_ok:
-                # No real transparency on this platform/Tk build — a full-screen
+                # No real transparency on this platform/Tk build -- a full-screen
                 # overlay would cover the desktop in solid magenta. Bail: the
                 # bond line is cosmetic and not worth that. (Pets still work;
                 # they manage their own tighter windows.)
@@ -499,8 +515,8 @@ class PetApp:
             # The line must sit ABOVE normal app windows (so it isn't covered
             # when a browser/folder is on screen) but BELOW the pets (so the
             # sprites render over the line, not under it). We make this window
-            # topmost too, and rely on the periodic lift in _tick — which lifts
-            # the bond window FIRST and the pets AFTER — so the pets stay above
+            # topmost too, and rely on the periodic lift in _tick -- which lifts
+            # the bond window FIRST and the pets AFTER -- so the pets stay above
             # the line within the topmost group.
             try:
                 win.attributes("-topmost", True)
@@ -519,14 +535,14 @@ class PetApp:
                     platform_utils.set_click_through(self._bond_win, True)
                 win.after(100, _make_click_through)
         except Exception:
-            # Bond visualization is purely cosmetic — never let it block startup.
+            # Bond visualization is purely cosmetic -- never let it block startup.
             self._bond_win = None
             self._bond_canvas = None
             self._bond_line = None
 
     def _update_bond(self):
         """Refresh the bond line each tick. It appears ONLY when both pets'
-        codependency reaches BOND_THRESHOLD (99.5 — see config) — a single,
+        codependency reaches BOND_THRESHOLD (99.5 -- see config) -- a single,
         fixed-faintness red line between them. No gradient: the bond is
         either formed or not."""
         if not self._bond_win or len(self.pets) < 2:
@@ -536,7 +552,7 @@ class PetApp:
             return
         ca = self.codep.get(a.character)
         cb = self.codep.get(b.character)
-        # The bond needs BOTH pulled to the peak — the weaker one gates it.
+        # The bond needs BOTH pulled to the peak -- the weaker one gates it.
         if min(ca, cb) < config.BOND_THRESHOLD:
             if self._bond_visible and self._bond_line is not None:
                 self._bond_canvas.itemconfig(self._bond_line, state="hidden")
@@ -544,7 +560,7 @@ class PetApp:
             return
         # Create the line once (lazy), then just move it each tick.
         # Soft, faint red: a thin (width=1) solid line in a light pink-red.
-        # No stipple — stipple dithers red against transparent (magenta) pixels
+        # No stipple -- stipple dithers red against transparent (magenta) pixels
         # which -transparentcolor punches out, leaving a sparse red speckle that
         # reads grey/dusty rather than red. Thinness + a desaturated tint gives
         # the "soft thread" feel without needing true alpha (Windows
@@ -583,7 +599,7 @@ class PetApp:
                 # is mid-flight, don't let a pet's scheduler fire a random
                 # dialogue line that would talk over the scripted beats. Wander
                 # is harmless (movement), expression just changes the face, so
-                # only dialogue is muted — the pet still acts, just stays quiet.
+                # only dialogue is muted -- the pet still acts, just stays quiet.
                 # In companion mode the pet is parked: dialogue is muted too so
                 # only the frontmost-app observer (not idle chatter) speaks.
                 if event == "dialogue" and (self.director.active or self._companion_active):
@@ -607,48 +623,17 @@ class PetApp:
         # Periodically re-assert topmost on both pets so other always-on-top
         # windows (taskbar, our own panel/popups, other apps) can't bury them.
         # Skip a pet that's being dragged right now (would yank it under the
-        # cursor).
+        # cursor). Uses lift() on all platforms -- cheaper than toggling
+        # -topmost off-then-on (which triggers a WM reactivation every call).
         if (now - self._last_lift >= config.LIFT_INTERVAL_S
                 and not self._lift_paused):
             self._last_lift = now
-            if platform_utils.is_macos():
-                # macOS: use lift() only. Toggling -topmost off-then-on
-                # reactivates the window (it becomes key window again) every
-                # cycle, which yanks focus, covers popups like the altar, and
-                # disrupts event delivery (two-finger tap). lift() reorders
-                # within the topmost group WITHOUT reactivation — keeps pets
-                # above normal app windows (they're -topmost) without the
-                # disruptive reactivation.
-                if self._bond_win:
-                    try:
-                        self._bond_win.lift()
-                    except tk.TclError:
-                        pass
-                for pet in self.pets:
-                    if pet._drag_data or not pet.win:
-                        continue
-                    try:
-                        pet.win.lift()
-                    except tk.TclError:
-                        pass
-            else:
-                # Windows: toggle off-then-on re-asserts the topmost flag and
-                # reliably pushes above OTHER apps' topmost windows (lift()
-                # only reorders within the topmost group on Windows).
-                if self._bond_win:
-                    try:
-                        self._bond_win.attributes("-topmost", False)
-                        self._bond_win.attributes("-topmost", True)
-                    except tk.TclError:
-                        pass
-                for pet in self.pets:
-                    if pet._drag_data or not pet.win:
-                        continue
-                    try:
-                        pet.win.attributes("-topmost", False)
-                        pet.win.attributes("-topmost", True)
-                    except tk.TclError:
-                        pass
+            for w in [self._bond_win] + [p.win for p in self.pets
+                                          if not p._drag_data and p.win]:
+                try:
+                    w.lift()
+                except tk.TclError:
+                    pass
 
         self.root.after(config.FRAME_MS, self._tick)
 
@@ -714,7 +699,7 @@ class PetApp:
     def _ashley_angers(self, andrew):
         """Ashley reacts angrily to Andrew being poked repeatedly. Fires
         immediately where she stands (turns to face him and snaps) rather
-        than walking over — the user wanted the reaction to be instant, so
+        than walking over -- the user wanted the reaction to be instant, so
         no 1.5s approach delay. speak() freezes her and Andrew via the
         partner-freeze callback."""
         ash = andrew.partner_ref
@@ -755,17 +740,20 @@ class PetApp:
         (right-clicked pet only)."""
         v = self.codep.get(pet.character)
         lvl = self.codep.level(pet.character)
-        label, emoji = self.codep.mental_state(pet.character)
+        label, emoji = self.codep.codep_state(pet.character)
         disp = config.CHARACTER_META.get(pet.character, {}).get("display", pet.character)
         win = tk.Toplevel(self.root)
-        win.title(f"{disp} — State")
+        win.title(f"{disp} -- State")
         win.geometry("240x130")
         win.attributes("-topmost", True)
         win.resizable(False, False)
         win.config(bg=theme.BG)
+        m_label = self.codep.mental_label(pet.character)
+        m_emoji = self.codep.mental_emoji(pet.character)
+        m_val = self.codep.get_mental(pet.character)
         text = (f"{emoji}  {disp}\n\n"
                 f"  codependency: {v:.0f}  ({lvl})\n"
-                f"  mental state: {label}")
+                f"  {m_emoji} mental state: {m_val:.0f}  ({m_label})")
         tk.Label(win, text=text, font=(config.UI_FONT, 10),
                  justify="left", padx=14, pady=14,
                  fg=theme.FG, bg=theme.BG).pack()
@@ -773,6 +761,11 @@ class PetApp:
 
     def _on_open_backpack(self):
         """Open the backpack window (reuse if already open)."""
+        # If the backpack object exists but its window is gone (closed by the
+        # user via WM_DELETE_WINDOW or destroyed externally), clear it so we
+        # create a fresh one.
+        if self.backpack is not None and self.backpack.win is None:
+            self.backpack = None
         if self.backpack is not None and self.backpack.win is not None:
             try:
                 self.backpack.win.lift()
@@ -780,12 +773,23 @@ class PetApp:
             except Exception:
                 pass
             return
-        items = [BackpackItem(it["name"], it["path"], it["usable"])
+        items = [BackpackItem(it["name"], it["path"], it["usable"],
+                              it.get("count"), it.get("max_px"))
                  for it in config.BACKPACK_ITEMS]
         self.backpack = Backpack(self.root, items,
                                  talisman_charges=self.talisman_charges,
-                                 on_use_talisman=self._on_use_talisman)
+                                 soul_count=self.soul_count,
+                                 flower_count=self.flower_count,
+                                 coin_count=self.coin_count,
+                                 on_use_talisman=self._on_use_talisman,
+                                 on_use_doll=self._on_use_doll)
         self.backpack.start()
+
+    def _on_open_todo(self):
+        """Open the todo editor (reuse if already open). Saving writes back to
+        data/todo.txt so the env_context poll picks up changes next cycle."""
+        import todo_dialog
+        todo_dialog.open_todo_dialog(self.root)
 
     def _on_set_city(self):
         """Open the city-picker so the user can set their weather city."""
@@ -800,7 +804,7 @@ class PetApp:
     def _on_toggle_music(self):
         """Toggle background music on/off."""
         playing = self.music.toggle()
-        # Could show a status bubble, but keep it simple — silent toggle.
+        # Could show a status bubble, but keep it simple -- silent toggle.
 
     def _on_ai_chat(self, pet, mode="sprite"):
         """Open an AI-chat window for the right-clicked pet. `mode` is
@@ -819,7 +823,7 @@ class PetApp:
         the screen's bottom-right corner with a gentle float, mute random
         dialogue/interactions, and start the frontmost-app observer. Off:
         resume free movement and stop observing. (Called from any pet's
-        right-click "Companion mode" — coordinates both regardless.)"""
+        right-click "Companion mode" -- coordinates both regardless.)"""
         self._companion_active = not self._companion_active
         if self._companion_active:
             anchors = self._companion_anchors()
@@ -907,8 +911,42 @@ class PetApp:
                         pass
             vw.on_close = _restore_both
 
+    def _on_use_doll(self, doll_name):
+        """Right-click 'Use it' on a backpack doll. Triggers the doll's
+        character-specific effect (dialogue / codependency), no drag-drop needed.
+          - Andy's doll  -> Leyley says "Hey, where'd you dig that up?",
+            mood happy, her codependency +15.
+          - Leyley's doll -> Andy codependency +5, mood happy (no dialogue)."""
+        ashley = next((p for p in self.pets if p.character == "ashley"), None)
+        andrew = next((p for p in self.pets if p.character == "andrew"), None)
+        if doll_name == "Andy's doll":
+            # Andy's doll -> Leyley reacts.
+            if ashley and ashley.win and not self.director.active:
+                from dialogue import DialogueLine
+                line = DialogueLine("ashley", "happy",
+                                    "Hey, where'd you dig that up?")
+                ashley.speak(line)
+            if self.codep:
+                self.codep.adjust("ashley", 15)
+                self.codep.adjust("andrew", 3)
+            if andrew and andrew.win:
+                andrew.set_mood("happy")
+        elif doll_name == "Leyley's doll":
+            # Leyley's doll -> Andy reacts (no dialogue, silent bond nudge).
+            if self.codep:
+                self.codep.adjust("andrew", 5)
+            if andrew and andrew.win:
+                andrew.set_mood("happy")
+        # Using a doll comforts them: Andrew +3, Ashley +8.
+        if self.codep:
+            self.codep.adjust_mental("andrew", 3)
+            self.codep.adjust_mental("ashley", 8)
+
     def _on_summon_altar(self, pet):
-        """Summon a temporary altar window next to the right-clicked pet."""
+        """Summon a temporary altar window next to the right-clicked pet. One
+        summon allows multiple sacrifices -- each sacrifice consumes one caught
+        soul. With no souls caught the altar still opens; sacrificing just
+        triggers the demon's 'you owe me' debt reaction instead."""
         # Place the altar beside the pet, offset to the right.
         ax = pet.x + config.PLACEHOLDER_SIZE + 20
         ay = pet.y - (config.ALTAR_SIZE - config.PLACEHOLDER_SIZE) // 2
@@ -926,12 +964,14 @@ class PetApp:
             self.altar = Altar(self.root, ax, ay,
                                on_sacrifice_done=self._on_sacrifice_done,
                                on_sacrifice_start=self._on_sacrifice_start,
+                               can_sacrifice=self._can_sacrifice,
                                rng=self.rng)
             self.altar.start()
+            self.altar.update_soul_count(self.soul_count)
 
     def _on_watch_tv(self, pet=None):
         """Summon the TV (reused if already open) and hide both desktop
-        sprites — the pets are 'on the couch' in the TV window. Pause the
+        sprites -- the pets are 'on the couch' in the TV window. Pause the
         periodic pet lift so the hidden sprite windows aren't toggled."""
         if self.tv is not None and self.tv.win is not None:
             try:
@@ -945,17 +985,46 @@ class PetApp:
         self.tv.start()
         # Hide the desktop pets for the duration of the TV. Also exit
         # companion mode on each (the parked pet would keep floating an
-        # invisible window otherwise) — hide_sprite handles that.
+        # invisible window otherwise) -- hide_sprite handles that.
         for p in self.pets:
             p.hide_sprite()
         self._lift_paused = True
 
     def _on_tv_close(self):
-        """The TV window closed — restore the desktop sprites and lift."""
+        """The TV window closed -- restore the desktop sprites and lift."""
         for p in self.pets:
             p.show_sprite()
         self._lift_paused = False
         self.tv = None
+
+    def _on_catch_soul(self, pet=None):
+        """Open the soul-catcher minigame (reused if already open) and hide
+        the desktop pets for its duration, like the TV mode."""
+        if self.soul_game is not None and self.soul_game.win is not None:
+            try:
+                self.soul_game.win.lift()
+                self.soul_game.win.focus_force()
+            except tk.TclError:
+                pass
+            return
+        from soul_game import SoulGame
+        self.soul_game = SoulGame(self.root, on_done=self._on_soul_game_done,
+                                  rng=self.rng)
+        self.soul_game.start()
+        for p in self.pets:
+            p.hide_sprite()
+        self._lift_paused = True
+
+    def _on_soul_game_done(self, caught, picked):
+        """Minigame ended -- persist caught souls + picked flowers, restore pets."""
+        self.soul_count += caught
+        self.flower_count += picked
+        self._save_soul_count()
+        self._save_flower_count()
+        for p in self.pets:
+            p.show_sprite()
+        self._lift_paused = False
+        self.soul_game = None
 
     def _on_sacrifice_start(self):
         """Ashley says her offering line immediately when the sacrifice begins
@@ -972,11 +1041,92 @@ class PetApp:
             self.codep.adjust("ashley", -0.2)
 
     def _on_sacrifice_done(self):
-        """The sacrifice animation finished — grant one talisman charge."""
+        """The sacrifice animation finished -- offer a caught soul (material)
+        for one talisman charge (the reward: a vision use). Spends soul_count,
+        grants talisman_charges, and earns +2 coins (the realm's currency)."""
+        if self.soul_count > 0:
+            self.soul_count -= 1
+            self._save_soul_count()
+            if self.backpack:
+                self.backpack.update_soul_count(self.soul_count)
         self.talisman_charges += 1
         self._save_talisman_charges()
         if self.backpack:
             self.backpack.update_talisman_count(self.talisman_charges)
+        # Each soul offered pays +2 coins (the realm's currency).
+        self.coin_count += 2
+        self._save_coin_count()
+        if self.backpack:
+            self.backpack.update_coin_count(self.coin_count)
+        # Sacrifice erodes Andrew's mental state (-8); Ashley is unaffected.
+        if self.codep:
+            self.codep.adjust_mental("andrew", -8)
+        # Keep the altar's corner count + revive logic in sync.
+        if self.altar is not None and self.altar.win is not None:
+            self.altar.update_soul_count(self.soul_count)
+
+    def _can_sacrifice(self):
+        """Called by the altar before each sacrifice. Returns True if there's a
+        caught soul to offer. If False, the demon's 'you owe me' reaction fires:
+        red text pops on the altar, Andrew goes worried, both lose codependency.
+        This lets the player keep clicking sacrifice on a single summoned altar
+        -- each click with a soul consumes one; a click without triggers the debt."""
+        if self.soul_count > 0:
+            return True
+        # No soul to offer -- the demon's debt reaction.
+        if self.altar is not None and self.altar.win is not None:
+            self.altar.show_demon_text("You owe me one soul now, tar soul.")
+        andrew = next((p for p in self.pets if p.character == "andrew"), None)
+        if andrew and andrew.win:
+            andrew.set_mood("worried")
+        # Heavy codependency hit for both (the debt unsettles them).
+        if self.codep:
+            self.codep.adjust("andrew", -10)
+            self.codep.adjust("ashley", -10)
+        # Tally the debt: 10 utterances open the entity's realm easter egg.
+        self.entity_debt_count += 1
+        self._save_entity_debt_count()
+        if self.entity_debt_count >= 10:
+            self.entity_debt_count = 0
+            self._save_entity_debt_count()
+            self._open_entity_realm()
+        return False
+
+    def _open_entity_realm(self):
+        """Open the entity's realm easter-egg scene (a red-black Realm with
+        three clickable eyes), hiding the desktop pets for its duration like the
+        TV / soul-game fullscreen modes."""
+        if self.entity_realm is not None and self.entity_realm.win is not None:
+            try:
+                self.entity_realm.win.lift()
+                self.entity_realm.win.focus_force()
+            except Exception:
+                pass
+            return
+        from entity_realm import EntityRealm
+        self.entity_realm = EntityRealm(self.root, on_close=self._on_entity_realm_close)
+        self.entity_realm.start(
+            flower_total=self.flower_count,
+            mental_andrew=self.codep.get_mental("andrew"),
+            mental_ashley=self.codep.get_mental("ashley"),
+        )
+        # Close the altar so the browser page is the main focus.
+        # Don't hide sprites -- the browser is fullscreen and covers the
+        # desktop; hiding sprites then never restoring them (since the
+        # browser has no Tk callback) would leave the desktop empty.
+        if self.altar is not None and self.altar.win is not None:
+            try:
+                self.altar.win.destroy()
+            except Exception:
+                pass
+            self.altar = None
+
+    def _on_entity_realm_close(self):
+        """The realm scene closed -- restore the desktop sprites and lift."""
+        for p in self.pets:
+            p.show_sprite()
+        self._lift_paused = False
+        self.entity_realm = None
 
     def _load_talisman_charges(self):
         """Read the persisted talisman count from the env-state file so a
@@ -991,11 +1141,91 @@ class PetApp:
     def _save_talisman_charges(self):
         """Merge the current talisman count into the env-state file (preserves
         the other keys like last_greet_date / last_active_timestamp). Silent
-        on failure — the count is cosmetic, not worth crashing over."""
+        on failure -- the count is cosmetic, not worth crashing over."""
         try:
             from env_context import EnvContext
             data = EnvContext._load_state()
             data["talisman_charges"] = int(self.talisman_charges)
+            with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+    def _load_soul_count(self):
+        """Caught-soul count from the soul-catcher minigame; spent by the
+        altar's sacrifice flow. Persists across restarts. 0 on any failure."""
+        try:
+            from env_context import EnvContext
+            n = EnvContext._load_state().get("soul_count", 0)
+            return int(n) if n else 0
+        except Exception:
+            return 0
+
+    def _save_soul_count(self):
+        try:
+            from env_context import EnvContext
+            data = EnvContext._load_state()
+            data["soul_count"] = int(self.soul_count)
+            with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+    def _load_flower_count(self):
+        """Picked-flower count from the soul-catcher minigame; a persistent
+        backpack count. 0 on any failure."""
+        try:
+            from env_context import EnvContext
+            n = EnvContext._load_state().get("flower_count", 0)
+            return int(n) if n else 0
+        except Exception:
+            return 0
+
+    def _save_flower_count(self):
+        try:
+            from env_context import EnvContext
+            data = EnvContext._load_state()
+            data["flower_count"] = int(self.flower_count)
+            with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+    def _load_coin_count(self):
+        """Coin currency earned by sacrificing souls (+2 each). Persists across
+        restarts in the env-state file. 0 on any failure."""
+        try:
+            from env_context import EnvContext
+            n = EnvContext._load_state().get("coin_count", 0)
+            return int(n) if n else 0
+        except Exception:
+            return 0
+
+    def _save_coin_count(self):
+        try:
+            from env_context import EnvContext
+            data = EnvContext._load_state()
+            data["coin_count"] = int(self.coin_count)
+            with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
+
+    def _load_entity_debt_count(self):
+        """How many times the demon has said the debt line with 0 souls. At 10
+        the entity's realm opens and the count resets. Persists across restarts."""
+        try:
+            from env_context import EnvContext
+            n = EnvContext._load_state().get("entity_debt_count", 0)
+            return int(n) if n else 0
+        except Exception:
+            return 0
+
+    def _save_entity_debt_count(self):
+        try:
+            from env_context import EnvContext
+            data = EnvContext._load_state()
+            data["entity_debt_count"] = int(self.entity_debt_count)
             with open(config.ENV_STATE_PATH, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
         except Exception:
@@ -1024,7 +1254,7 @@ class PetApp:
         band = self._distance_band(dist)
         a.set_distance_band(band)
         b.set_distance_band(band)
-        # Codependency drift from proximity — runs in every band now
+        # Codependency drift from proximity -- runs in every band now
         # (close/far/very_far all drain it; very_near raises it). Per-second
         # rates live in CodependencyState.tick; dt clamped by FRAME_MS so
         # it's small per tick.

@@ -1,12 +1,12 @@
 """AI chat: generate in-character lines via OpenRouter's free models.
 
-Optional enhancement — the app runs identically with or without this. The
+Optional enhancement -- the app runs identically with or without this. The
 user supplies their own OpenRouter API key (free :models carry a daily cap);
 with no key, on network failure, or on rate-limit, callers fall back to
 local dialogue and the user notices nothing broken.
 
 Design:
-- Personas are baked in (提炼自 dialogue.json), so users on GitHub need no setup.
+- Personas are baked in (extracted from dialogue.json), so users on GitHub need no setup.
 - A local JSON cache keys on (character, prompt) so repeated triggers don't
   burn the daily free quota. Delete data/.ai_cache.json to clear it.
 - Pure stdlib urllib (no requests/openai SDK), matching the weather/geocoding
@@ -88,7 +88,7 @@ def build_messages(character, user_msg=None, history=None):
         # pair-confusion bug (asking Andy, getting Ashley) is worse.
         content = (f"A player (NOT your sibling) says to you: {user_msg.strip()}\n"
                    f"Reply to the player in character. If you reference your "
-                   f"sibling, use their name — do not mistake the player for them.")
+                   f"sibling, use their name -- do not mistake the player for them.")
     else:
         # No input: just say something on your mind right now.
         content = "Say one line that's on your mind right now, in character."
@@ -116,7 +116,7 @@ def fetch_ai_line(character, user_msg=None, history=None):
     On any error returns (None, None, False).
 
     `history` (optional) is the running conversation so the model can reply in
-    context (multi-turn). When history is given, the cache is BYPASSED — each
+    context (multi-turn). When history is given, the cache is BYPASSED -- each
     turn's reply depends on the full context, so a cached (character, input)
     reply would be the wrong answer for a different conversation. Only cacheless
     single-turn triggers (idle/no-input) still hit the cache.
@@ -128,7 +128,7 @@ def fetch_ai_line(character, user_msg=None, history=None):
     has_history = bool(history)
     cache_key = f"{character}::{user_msg}"  # "" for idle triggers
 
-    # 1. Cache hit — only for single-turn (no history). Multi-turn replies
+    # 1. Cache hit -- only for single-turn (no history). Multi-turn replies
     #    depend on the full context, so caching by (character, input) would
     #    return a stale reply from a different conversation.
     if not has_history:
@@ -138,7 +138,7 @@ def fetch_ai_line(character, user_msg=None, history=None):
             return line, mood, True
 
     # 2. Call OpenRouter, trying the configured model then fallbacks on failure
-    #    (free models get rate-limited upstream and rotate — never rely on one).
+    #    (free models get rate-limited upstream and rotate -- never rely on one).
     key = user_settings.get_ai_key()
     messages = build_messages(character, user_msg, history)
     models_to_try = [user_settings.get_ai_model()]
@@ -217,7 +217,7 @@ def _extract_line(data, character):
     `mood|line` prefix, strip surrounding quotes/whitespace, clamp length.
 
     Returns (mood, line) where mood is a validated MOODS entry or the
-    character's default (neutral/chuckle). Returns (None, None) if malformed —
+    character's default (neutral/chuckle). Returns (None, None) if malformed --
     the caller tries the next fallback model."""
     try:
         content = data["choices"][0]["message"]["content"]

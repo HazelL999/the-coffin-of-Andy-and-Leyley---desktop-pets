@@ -4,7 +4,7 @@ two pets sit on the couch watching (drawn to the window's right side).
 Lifecycle mirrors altar.py: summoned on demand (reused if already open),
 draggable, right-click -> Close to dismiss. But unlike the altar this is an
 opaque black UI surface (not a transparent sprite), so it uses a plain
-Toplevel + theme.BG and canvas.create_image for both Windows and macOS — no
+Toplevel + theme.BG and canvas.create_image for both Windows and macOS -- no
 NSImage bridge is needed (that bridge only exists to work around Tk's
 SourceAtop bug on *transparent* windows).
 
@@ -256,7 +256,7 @@ class TV:
                          fill="#1c1c1c", outline="#000000", width=1,
                          smooth=False)
         c.create_rectangle(sx, sy, sx + sw, sy + sh, fill="#000000", outline="")
-        # Subtle screen glass sheen — a faint diagonal highlight, so the black
+        # Subtle screen glass sheen -- a faint diagonal highlight, so the black
         # area looks like glass, not just empty. (Thin, low-contrast.)
         c.create_polygon(sx + 6, sy + 4, sx + sw * 0.5, sy + 4,
                          sx + sw * 0.5, sy + 24, sx + 6, sy + 24,
@@ -324,7 +324,7 @@ class TV:
 
     def _draw_couch(self):
         """The 'pets on the couch watching' image to the right of the screen.
-        Composited over the window bg (not magenta-baked — this is opaque).
+        Composited over the window bg (not magenta-baked -- this is opaque).
         Falls back to a placeholder label if the image is missing."""
         couch_x = config.TV_SHELL_PAD + config.TV_SCREEN_W + 2 * config.TV_SHELL_PAD
         region_w = config.TV_WIDTH - couch_x - config.TV_SHELL_PAD

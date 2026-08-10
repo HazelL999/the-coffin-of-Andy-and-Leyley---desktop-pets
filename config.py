@@ -1,6 +1,6 @@
 """Centralized tunable constants for the desktop pets.
 
-Single source of truth — tweak behavior here, no logic. All times in seconds
+Single source of truth -- tweak behavior here, no logic. All times in seconds
 unless the name says otherwise (ms).
 """
 
@@ -69,7 +69,7 @@ SCREEN_MARGIN = 20              # keep pets this far from screen edges
 # user can still place them overlapping by hand. One body length (~128px) keeps
 # them a comfortable step apart; cling/chase scenes use _beside (same spacing)
 # so this never fights a scripted approach.
-MIN_PARTNER_DISTANCE = 128      # px — one body length; wander targets get nudged apart
+MIN_PARTNER_DISTANCE = 128      # px -- one body length; wander targets get nudged apart
 # Periodically re-lift both pet windows to the top of the Z order so other
 # topmost windows (taskbar, our own control panel / popups, other apps' always-
 # -on-top windows) don't bury a pet that drifted underneath. Throttled so it
@@ -95,7 +95,7 @@ INTERACTION_RANGE = (60.0, 180.0)  # when to schedule the next interaction.
 CHASE_EVADE_PX = 40            # how far Ashley sidesteps when Andrew chases her
 
 # --- Distance emotion spectrum (Andy & Leyley: close=clingy/smothering,
-# far=longing/hostile — matches the game's Burial/Decay duality) ---
+# far=longing/hostile -- matches the game's Burial/Decay duality) ---
 # Bands are in multiples of PLACEHOLDER_SIZE (a "body length"). Thresholds are
 # the upper bound of each band (dist <= T1 -> very_near, etc.).
 DIST_BAND_SIZE = 128            # one body length unit (= PLACEHOLDER_SIZE)
@@ -115,8 +115,8 @@ DRAG_ONTO_DIST = 128 * 0.6      # overlap threshold for drag-onto-partner
 # proximity. Each character has a sleep window (hours, 0-23) during which they
 # CAN fall asleep; outside it they never accumulate sleep. Windows cross
 # midnight, so membership is `hour >= start or hour < end`.
-#   Andy:   22:00-08:00  — falls asleep when pressed to Ashley (very_near) + idle.
-#   Ashley: 00:00-10:00  — falls asleep when merely idle (doesn't need Andy).
+#   Andy:   22:00-08:00  -- falls asleep when pressed to Ashley (very_near) + idle.
+#   Ashley: 00:00-10:00  -- falls asleep when merely idle (doesn't need Andy).
 SLEEP_IDLE_THRESHOLD = 15.0    # seconds of qualifying idle before sleep
 SLEEP_DIST_BAND = "very_near"  # Andy only sleeps when this close to Ashley
 ANDREW_SLEEP_HOURS = (22, 8)   # Andy sleep window (start, end_exclusive), crosses midnight
@@ -147,7 +147,7 @@ CHOICE_DAILY_MAX = 2
 
 # --- Bond line (visualizes peak mutual codependency) ---
 # The faint red line appears when BOTH pets' codependency is at or above
-# BOND_THRESHOLD — the fully-formed, mutual bond. It's a peak state, meant to
+# BOND_THRESHOLD -- the fully-formed, mutual bond. It's a peak state, meant to
 # be rare and earned (the two have to drift all the way up together), not a
 # gradient you watch fill in. Faint by design: a thin, stippled, soft-red
 # line so it reads as an ambient connection, not a bright cable.
@@ -155,12 +155,12 @@ CHOICE_DAILY_MAX = 2
 # Set just under 100 (99.5) rather than exactly 100.0: codependency drifts in
 # 0.1/s steps and the Check-state UI shows {v:.0f} (rounded to a whole number),
 # so a value like 99.6 displays as "100" while the raw float is still < 100.0.
-# At 100.0 the line would flicker off whenever the weaker pet sits at 99.x —
+# At 100.0 the line would flicker off whenever the weaker pet sits at 99.x --
 # matching what the UI calls "maxed" to what the line calls "formed".
 BOND_THRESHOLD = 99.5
 
 # --- Altar (sacrifice a soul to the demon for a talisman charge) ---
-ALTAR_SIZE = 200               # px — square altar window
+ALTAR_SIZE = 200               # px -- square altar window
 ALTAR_STAR_RADIUS = 80         # outer radius of the pentagram
 
 # --- TV (watch-TV mode: ads on the screen, pets on the couch) ---
@@ -184,9 +184,14 @@ TV_COUCH_IMG = str(ADS_DIR / "couch.png")  # the "pets on the couch" image
 BACKPACK_DIR = str(ROOT_DIR / "backpack")
 VISION_DIR = str(ROOT_DIR / "vision")
 BACKPACK_ITEMS = [
-    {"name": "Andy's doll", "path": str(ROOT_DIR / "backpack" / "Andy's rabbit doll.png"), "usable": False},
-    {"name": "Leyley's doll", "path": str(ROOT_DIR / "backpack" / "Leyley's rabbit doll.png"), "usable": False},
-    {"name": "Talisman", "path": str(ROOT_DIR / "backpack" / "Talisman.png"), "usable": True},
+    {"name": "Andy's doll", "path": str(ROOT_DIR / "backpack" / "Andy's rabbit doll.png"), "usable": True},
+    {"name": "Leyley's doll", "path": str(ROOT_DIR / "backpack" / "Leyley's rabbit doll.png"), "usable": True},
+    {"name": "Talisman", "path": str(ROOT_DIR / "backpack" / "Talisman.png"), "usable": True, "count": "talisman"},
+    {"name": "Soul", "path": str(ROOT_DIR / "backpack" / "soul.png"), "usable": False, "count": "soul"},
+    {"name": "Flower", "path": str(ROOT_DIR / "backpack" / "Red Flower.png"), "usable": True, "count": "flower"},
+    {"name": "Coin", "path": str(ROOT_DIR / "backpack" / "coin.png"), "usable": False, "count": "coin", "max_px": 55},
+    {"name": "Pistol", "path": str(ROOT_DIR / "backpack" / "pistol.png"), "usable": True, "max_px": 70},
+    {"name": "Mop", "path": str(ROOT_DIR / "backpack" / "mop.png"), "usable": True},
 ]
 
 # --- Environment context (time/weather/todo) ---
@@ -203,23 +208,23 @@ ENV_STATE_PATH = ROOT_DIR / "data" / ".env_state.json"
 # --- Daily rhythm events ---
 # Late-night monologue: between these hours, the first poll after crossing into
 # night triggers a one-off insomnia line (Andrew tired, Ashley possessive).
-LATE_NIGHT_START = 23   # hour (inclusive) — 23:00 onwards is "late night"
-LATE_NIGHT_END = 5      # hour (exclusive) — before 5:00 still counts
+LATE_NIGHT_START = 23   # hour (inclusive) -- 23:00 onwards is "late night"
+LATE_NIGHT_END = 5      # hour (exclusive) -- before 5:00 still counts
 # Reunion greeting: if the app was closed longer than this, re-launch triggers
 # a multi-beat reunion sequence instead of the normal time-period greeting.
 REUNION_THRESHOLD_HOURS = 12
 
 # --- AI chat (OpenRouter, optional enhancement) ---
-# Right-click "AI chat…" lets the pet speak an AI-generated, in-character line.
+# Right-click "AI chat..." lets the pet speak an AI-generated, in-character line.
 # Requires the user's own OpenRouter API key (free :models have a daily cap).
-# With no key / on failure, falls back to local random dialogue — the app runs
+# With no key / on failure, falls back to local random dialogue -- the app runs
 # identically with or without this configured. Pure stdlib (urllib), no deps.
 AI_MODEL_DEFAULT = "google/gemma-4-26b-a4b-it:free"  # probed working 2026-07-13
 # Tried in order on 429/rate-limit/404 (free models get throttled upstream, and
 # a given :free variant can 404 if its provider route is broken even when the
 # model is listed as "alive"). Order = models we've actually seen succeed first,
 # then the rest as rotation. Note: free OpenRouter keys also hit a 402
-# "spend limit exceeded" on some models once the key's free quota is tapped —
+# "spend limit exceeded" on some models once the key's free quota is tapped --
 # those count as failures too and trigger the next fallback.
 AI_MODEL_FALLBACKS = [
     "google/gemma-4-31b-it:free",      # alive but provider route sometimes 404s
@@ -236,14 +241,14 @@ AI_CACHE_PATH = ROOT_DIR / "data" / ".ai_cache.json"
 # --- Group chat (social-app-style IM window) ---
 GROUP_CHAT_W = 480                # window width
 GROUP_CHAT_H = 560                # window height
-GROUP_CHAT_BUBBLE_MAX_W = 340    # px — wrap text past this (bubbles)
+GROUP_CHAT_BUBBLE_MAX_W = 340    # px -- wrap text past this (bubbles)
 
 # --- AI chat UI images (the character-selection background + portraits) ---
 # These live in the project's AICHAT/ folder. Users can swap them for their
 # own art. The "original" image is the full-size scene background shown before
 # a character is picked; the two "talk to <char>" images flash briefly on
 # selection. All paths are joined with the OS separator (pathlib) so they work
-# on macOS/Linux too — the old backslash-joins broke non-Windows.
+# on macOS/Linux too -- the old backslash-joins broke non-Windows.
 AICHAT_DIR = ROOT_DIR / "AICHAT"
 AICHAT_ORIGINAL = str(AICHAT_DIR / "original.png")
 AICHAT_TALK_ANDREW = str(AICHAT_DIR / "talk to Andrew.png")
@@ -251,18 +256,18 @@ AICHAT_TALK_ASHLEY = str(AICHAT_DIR / "talk to Ashley.png")
 
 # --- Speech bubble ---
 BUBBLE_HOLD = 4.0             # seconds a bubble stays visible
-BUBBLE_FADE = 0.3            # (reserved) fade duration — kept simple for now
-BUBBLE_MAX_WIDTH = 220       # px — wrap text past this
+BUBBLE_FADE = 0.3            # (reserved) fade duration -- kept simple for now
+BUBBLE_MAX_WIDTH = 220       # px -- wrap text past this
 
 # --- Sprite sizing ---
-PLACEHOLDER_SIZE = 128        # px — placeholder + assumed sprite size for clamping
+PLACEHOLDER_SIZE = 128        # px -- placeholder + assumed sprite size for clamping
 
 # --- Companion mode ---
 # Right-click -> "Companion mode" parks both pets in the bottom-right corner,
 # gently floating, with random dialogue/interactions muted. A CompanionObserver
 # reads the frontmost app and speaks a category-matched line when it changes.
 COMPANION_POLL_INTERVAL_S = 45    # how often the frontmost app is re-read
-COMPANION_FLOAT_AMP = 6           # px — gentle float amplitude (sine)
+COMPANION_FLOAT_AMP = 6           # px -- gentle float amplitude (sine)
 COMPANION_FLOAT_PERIOD = 3.5     # seconds per float cycle
 COMPANION_MARGIN = 24             # px gap from the screen's right/bottom edge
 # The two pets sit side by side; the left one is offset left by this much so
@@ -270,8 +275,8 @@ COMPANION_MARGIN = 24             # px gap from the screen's right/bottom edge
 COMPANION_SIDE_GAP = 128
 
 # --- Background music (pygame.mixer, cross-platform) ---
-# Drop .mp3 / .ogg / .wav files into assets/music/ — the first found file
-# is played on loop at startup. Right-click a pet → "🎵 Music on/off" toggles.
+# Drop .mp3 / .ogg / .wav files into assets/music/ -- the first found file
+# is played on loop at startup. Right-click a pet -> "🎵 Music on/off" toggles.
 MUSIC_DIR = ASSETS_DIR / "music"
-MUSIC_VOLUME = 0.25          # 0.0–1.0; low default so it's ambient, not intrusive
+MUSIC_VOLUME = 0.25          # 0.0-1.0; low default so it's ambient, not intrusive
 MUSIC_ENABLED = True          # start playing on launch (user can toggle off)

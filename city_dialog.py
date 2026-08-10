@@ -1,8 +1,8 @@
 """City picker dialog: lets the user set their city by name.
 
-Right-click a pet -> "Set city…" opens this dialog. Type a city name, hit
+Right-click a pet -> "Set city..." opens this dialog. Type a city name, hit
 Search; the Open-Meteo geocoding API (no key) returns candidate matches
-(same name can exist in different countries — Shanghai CN vs Shanghai US),
+(same name can exist in different countries -- Shanghai CN vs Shanghai US),
 the user picks one, and the choice (name + lat/lon) is persisted via
 user_settings so future launches use it.
 
@@ -70,7 +70,7 @@ def open_city_dialog(root, on_chosen=None):
             return
         listbox.delete(0, "end")
         _candidates.clear()
-        status.config(text="Searching…")
+        status.config(text="Searching...")
         win.update_idletasks()
         results = _geocode(name)
         if results is None:

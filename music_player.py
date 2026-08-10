@@ -1,8 +1,8 @@
 """Background music player: cross-platform looped playback via pygame.mixer.
 
-Drop .mp3 / .ogg / .wav files into assets/music/ — the first found file is
+Drop .mp3 / .ogg / .wav files into assets/music/ -- the first found file is
 played on loop. If pygame isn't installed (or no music files), the app runs
-identically without sound — no crash, no nag.
+identically without sound -- no crash, no nag.
 
 Uses pygame.mixer (not the full pygame engine) so it's lightweight. Init is
 lazy: the mixer only starts when start() is called, and fails silently.
@@ -16,7 +16,7 @@ import config
 class MusicPlayer:
     """A thin wrapper around pygame.mixer for ambient looped music.
 
-    All methods are best-effort — if pygame isn't installed or the audio
+    All methods are best-effort -- if pygame isn't installed or the audio
     file can't load, everything degrades to silence without raising.
     """
 
@@ -83,7 +83,7 @@ class MusicPlayer:
         else:
             try:
                 if self._track and self._mixer.music.get_busy() is not None:
-                    # Already loaded — just unpause.
+                    # Already loaded -- just unpause.
                     self._mixer.music.unpause()
                 else:
                     # Never started (e.g. MUSIC_ENABLED was False at init).

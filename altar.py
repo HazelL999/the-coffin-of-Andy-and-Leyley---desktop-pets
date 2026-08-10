@@ -4,7 +4,7 @@ demon in exchange for a talisman charge.
 Geometry is all code-drawn (no sprite art): a red pentagram inside a dark
 ring, five candles on the outer points with flickering flames, a many-eyed
 demon blob at the center, and a floating soul orb at the lower-left. Right-
-click → Sacrifice animates the soul flying into the demon, the demon's eyes
+click -> Sacrifice animates the soul flying into the demon, the demon's eyes
 flaring, and a flash; the sacrifice then grants one talisman charge (and
 Ashley speaks her offering line + a codependency shift, wired in main.py).
 """
@@ -42,12 +42,20 @@ class Altar:
     """A standalone transparent window holding the altar drawing."""
 
     def __init__(self, root, x, y, on_sacrifice_done=None, rng=None,
-                 on_sacrifice_start=None):
+                 on_sacrifice_start=None, can_sacrifice=None):
         self.root = root
         self.x = x
         self.y = y
         self.on_sacrifice_done = on_sacrifice_done
         self.on_sacrifice_start = on_sacrifice_start
+        # can_sacrifice() -> bool: asked before each sacrifice; False means no
+        # caught soul to offer (the caller handles the demon's "you owe me" line).
+        self.can_sacrifice = can_sacrifice
+        # Mirrors main.soul_count -- set by update_soul_count() so the altar can
+        # decide whether to revive the soul after a sacrifice (if souls remain)
+        # and show a remaining-count label in the corner.
+        self.soul_count = 0
+        self._soul_count_label = None
         self.rng = rng or random
         self.win = None
         self.canvas = None
@@ -134,7 +142,7 @@ class Altar:
         self.canvas.create_oval(cx - R - 14, cy - R - 14, cx + R + 14, cy + R + 14,
                                 outline="#5a0e0e", width=3)
 
-        # Pentagram star — OUTLINE ONLY (no fill). The polygon connects outer
+        # Pentagram star -- OUTLINE ONLY (no fill). The polygon connects outer
         # points skipping one each time (the classic 5-point star). Empty fill
         # matches the transparent color so the interior shows through.
         outer = []
@@ -200,8 +208,8 @@ class Altar:
         h = self._soul_h
         tail_dx = self._soul_tail_dx
         head_cy = cy - h * 0.18          # head vertical center
-        r_upper = w * 0.55             # head top half (SHORTER) — upper radius
-        r_lower = w * 0.95             # head bottom half (flows to tail) — lower radius
+        r_upper = w * 0.55             # head top half (SHORTER) -- upper radius
+        r_lower = w * 0.95             # head bottom half (flows to tail) -- lower radius
         tail_w = w * 0.85              # tail start half-width (THICK)
         tail_tip_y = cy + h * 0.5
         # 8 control points, clockwise from tail-tip-right:
@@ -282,7 +290,7 @@ class Altar:
 
     def _schedule_soul_float(self):
         """Gently bob the soul up and down while it rests (stops once
-        sacrifice animation begins — _animate_soul_to_demon takes over)."""
+        sacrifice animation begins -- _animate_soul_to_demon takes over)."""
         if not self.canvas or not self.win:
             return
         if getattr(self, "_soul_sacrificed", False) or getattr(self, "_busy", False):
@@ -328,12 +336,13 @@ class Altar:
     def sacrifice(self):
         if self._busy or not self.canvas:
             return
-        if getattr(self, "_soul_sacrificed", False):
-            # The soul is already gone — nothing left to sacrifice.
+        # Ask the caller if there's a soul to offer. If not, the caller handles
+        # the demon's "you owe me one" reaction; we just bail.
+        if self.can_sacrifice is not None and not self.can_sacrifice():
             return
         self._busy = True
         # Ashley reacts immediately when the sacrifice begins (not after the
-        # animation finishes) — the offering line plays over the soul's flight.
+        # animation finishes) -- the offering line plays over the soul's flight.
         if self.on_sacrifice_start:
             self.on_sacrifice_start()
         # Start the soul from its resting spot and fly it to the demon center.
@@ -367,7 +376,7 @@ class Altar:
         try:
             # teardrop polygon: re-emit full outline at new center
             self.canvas.coords(self._soul_item, *self._soul_outline(sx, sy))
-            # glow ring removed — nothing to move
+            # glow ring removed -- nothing to move
             # eyes follow the flat head (head center ~ sy - h*0.18)
             eye_cy = sy - h * 0.18
             self.canvas.coords(self._soul_eyes[0], sx - 5, eye_cy - 1, sx - 1, eye_cy + 2)
@@ -380,7 +389,7 @@ class Altar:
         self._anim_after_id = self.win.after(20, lambda: self._animate_soul_to_demon(step + 1))
 
     def _on_soul_reaches_demon(self):
-        # Soul disappears (and stays gone — it was sacrificed).
+        # Soul disappears (and stays gone -- it was sacrificed).
         self._soul_sacrificed = True
         try:
             self.canvas.itemconfig(self._soul_item, state="hidden")
@@ -434,7 +443,7 @@ class Altar:
                 pass
 
     def _reset_demon_eyes(self):
-        # Hide the red demon-body flash overlay. Eyes stay red always — no
+        # Hide the red demon-body flash overlay. Eyes stay red always -- no
         # recolor needed.
         if getattr(self, "_demon_flash", None) is not None:
             try:
@@ -442,11 +451,106 @@ class Altar:
             except tk.TclError:
                 pass
 
+    def update_soul_count(self, n):
+        """Called by PetApp after a sacrifice (or on summon) so the altar shows
+        the remaining caught-soul count in its bottom-left corner."""
+        self.soul_count = n
+        if not self.canvas:
+            return
+        if self._soul_count_label is None:
+            self._soul_count_label = self.canvas.create_text(
+                self.win_w - 6, 6, anchor="ne",
+                text=f"×{n}", fill="#e8dcb0",
+                font=(config.UI_FONT, 9, "bold"))
+        else:
+            try:
+                self.canvas.itemconfig(self._soul_count_label, text=f"×{n}")
+            except tk.TclError:
+                pass
+
     def _reset_after_sacrifice(self):
-        # The soul was sacrificed — it stays gone. Just free the altar for the
-        # next sacrifice (a fresh soul will need a new summon, or the user
-        # dismisses + re-summons). We do NOT bring the soul back here.
+        # Free the altar for the next click. If souls remain, revive the soul
+        # back to its resting spot (bottom-left) so the player sees it's ready
+        # for another sacrifice. If no souls left, the soul stays gone -- it
+        # flew into the demon and was consumed.
         self._busy = False
+        has_more = self.soul_count > 0
+        self._soul_sacrificed = not has_more
+        if has_more and self.canvas:
+            cx = self.win_w // 2
+            cy = self.win_h // 2
+            self._soul_pos = [cx - config.ALTAR_STAR_RADIUS * 0.9,
+                              cy + config.ALTAR_STAR_RADIUS * 0.9]
+            sx, sy = self._soul_pos
+            try:
+                # Reposition the soul polygon + eyes to the resting spot, then
+                # show them (coords must be reset -- they were left at the demon
+                # centre after the flight animation).
+                self.canvas.coords(self._soul_item, *self._soul_outline(sx, sy))
+                eye_cy = sy - self._soul_h * 0.18
+                self.canvas.coords(self._soul_eyes[0], sx - 5, eye_cy - 1, sx - 1, eye_cy + 2)
+                self.canvas.coords(self._soul_eyes[1], sx + 1, eye_cy - 1, sx + 5, eye_cy + 2)
+                self.canvas.itemconfig(self._soul_item, state="normal")
+                for eye in getattr(self, "_soul_eyes", []):
+                    self.canvas.itemconfig(eye, state="normal")
+            except tk.TclError:
+                pass
+
+    # ---------- demon speech (transient red text on the altar canvas) ----------
+    def show_demon_text(self, text, ms=2500):
+        """Show a line of red text near the demon's mouth for a few seconds,
+        then remove it. Used for the 'you owe me' reaction when the player
+        sacrifices with no caught soul left. A dark backing rect is drawn under
+        the text so it renders cleanly on the transparent altar window (raw
+        create_text on a -transparentcolor window can pick up the key colour)."""
+        if not self.canvas:
+            return
+        if getattr(self, "_demon_text_id", None) is not None:
+            try:
+                self.canvas.delete(self._demon_text_id)
+            except tk.TclError:
+                pass
+            self._demon_text_id = None
+        if getattr(self, "_demon_text_bg", None) is not None:
+            try:
+                self.canvas.delete(self._demon_text_bg)
+            except tk.TclError:
+                pass
+        cx = self.win_w // 2
+        cy = self.win_h // 2 - config.ALTAR_STAR_RADIUS // 3
+        # Dark backing rectangle so red text is readable on any background.
+        self._demon_text_bg = self.canvas.create_rectangle(
+            0, 0, 1, 1, fill="#1a0a0a", outline="", stipple="gray75")
+        self._demon_text_id = self.canvas.create_text(
+            cx, cy, text=text, fill="#ff3333",
+            font=(config.UI_FONT, 9, "bold"), justify="center",
+            anchor="center", width=self.win_w - 24)
+        # Size the backing rect to the text's bounding box.
+        try:
+            self.canvas.update_idletasks()
+            bbox = self.canvas.bbox(self._demon_text_id)
+            if bbox:
+                self.canvas.coords(self._demon_text_bg,
+                                   bbox[0] - 4, bbox[1] - 2,
+                                   bbox[2] + 4, bbox[3] + 2)
+        except tk.TclError:
+            pass
+        self.canvas.tag_raise(self._demon_text_bg, self._demon_text_id)
+        self.canvas.tag_raise(self._demon_text_id)
+        try:
+            self.win.after(ms, self._hide_demon_text)
+        except tk.TclError:
+            pass
+
+    def _hide_demon_text(self):
+        for attr in ("_demon_text_id", "_demon_text_bg"):
+            tid = getattr(self, attr, None)
+            if tid is not None:
+                try:
+                    self.canvas.delete(tid)
+                except (tk.TclError, AttributeError):
+                    pass
+            setattr(self, attr, None)
 
     # ---------- context menu ----------
     def _on_context(self, event):

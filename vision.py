@@ -5,7 +5,7 @@ The vision images live in the project's `vision/` directory (see
 config.VISION_DIR). They are wide (up to ~2880px) transparent RGBA PNGs,
 picked uniformly at random each time the talisman is used. The window
 scales to ~80% screen width, shows the image centered, and auto-closes after 5
-seconds (or on click). Drop new PNGs into `vision/` — they're picked up
+seconds (or on click). Drop new PNGs into `vision/` -- they're picked up
 automatically on the next use, no code change needed.
 """
 
@@ -84,7 +84,7 @@ class VisionWindow:
             if self._mac_sprite.attach(self.win, new_w, new_h, 0, 0):
                 self._mac_sprite.update_image(nsimg)
             else:
-                # Bridge failed (no NSWindow yet) — retry once after mapping.
+                # Bridge failed (no NSWindow yet) -- retry once after mapping.
                 self.win.after(80, lambda: (
                     self._mac_sprite.attach(self.win, new_w, new_h, 0, 0)
                     and self._mac_sprite.update_image(nsimg)))

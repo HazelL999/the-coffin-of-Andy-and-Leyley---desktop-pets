@@ -13,9 +13,9 @@ play as looping animation (legacy behavior).
 
 # Canonical mood list. Andrew's 40 moods + Ashley's 28 unique moods (the two
 # also share 12 moods: neutral/content/cute/furious/happy/indifferent/inlove/
-# mad/scolding/sinister/snort/worried — each has its own art under
+# mad/scolding/sinister/snort/worried -- each has its own art under
 # assets/<character>/<mood>/. For Ashley, `neutral` is her "evil grin" sprite
-# and `chuckle` is her "smug" sprite — both via filename aliases in
+# and `chuckle` is her "smug" sprite -- both via filename aliases in
 # _place_ashley.py). `annoyed` has no art yet but is kept because dialogue
 # references it (placeholder is drawn).
 MOODS = [
@@ -48,7 +48,7 @@ TRANSITION_MOODS = {
     "neutral", "inlove", "shy", "explaining",
     # Ashley
     "embarrased", "happy",
-    # "inlove" is shared — both characters have a -1/-2 pair for it.
+    # "inlove" is shared -- both characters have a -1/-2 pair for it.
 }
 
 # Per-character idle expression weights, split by distance band. Andy & Leyley
@@ -120,12 +120,12 @@ _CODEP_MOOD_BIAS = {
 # Weekday = exhausted/restless, weekend = relaxed.
 _WEEKEND_MOOD_BIAS = {
     "andrew": {
-        True:  {"content": 2.0, "neutral": 1.5},           # weekend — relaxed
-        False: {"unhappy": 2.0, "worried": 1.5, "indifferent": 1.5},  # weekday — tired
+        True:  {"content": 2.0, "neutral": 1.5},           # weekend -- relaxed
+        False: {"unhappy": 2.0, "worried": 1.5, "indifferent": 1.5},  # weekday -- tired
     },
     "ashley": {
-        True:  {"neutral": 2.0, "happy": 1.5},            # weekend — content
-        False: {"provoking": 2.0, "hmm": 1.5},            # weekday — restless
+        True:  {"neutral": 2.0, "happy": 1.5},            # weekend -- content
+        False: {"provoking": 2.0, "hmm": 1.5},            # weekday -- restless
     },
 }
 
@@ -134,7 +134,7 @@ _WEEKEND_MOOD_BIAS = {
 # idle moods can change every few seconds. Moods not listed = 0 delta.
 #
 # NOTE: this is a flat dict keyed by mood, so shared moods (inlove/content/happy/
-# neutral/sinister/scared/worried/furious/mad — both characters have art for them)
+# neutral/sinister/scared/worried/furious/mad -- both characters have art for them)
 # get ONE value, listed once in the "Shared moods" block below. Do not also list
 # them in the per-character blocks: a duplicate key would silently overwrite the
 # earlier entry (Python keeps the last assignment), which is how `worried` once
