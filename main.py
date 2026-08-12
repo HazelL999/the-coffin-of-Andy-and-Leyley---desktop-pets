@@ -446,15 +446,14 @@ class PetApp:
         btns = tk.Frame(self.panel, bg=theme.BG)
         btns.pack()
 
-        theme.style_button(
-            tk.Button(btns, text="Quit", width=7,
-                       command=self.quit)).pack(side="left", padx=3)
+        theme.make_button(btns, text="Quit", width=7,
+                           command=self.quit).pack(side="left", padx=3)
 
         self.interaction_on = not no_interaction
-        self.inter_btn = theme.style_button(
-            tk.Button(btns,
-                      text="Interact: ON" if self.interaction_on else "Interact: OFF",
-                      width=11, command=self._toggle_interaction))
+        self.inter_btn = theme.make_button(
+            btns,
+            text="Interact: ON" if self.interaction_on else "Interact: OFF",
+            width=11, command=self._toggle_interaction)
         self.inter_btn.pack(side="left", padx=3)
 
         # No "Click-through" button anywhere: macOS pets receive clicks via

@@ -117,9 +117,9 @@ def open_todo_dialog(root):
         _check_ddl()
         de.pack(side="left", padx=(2, 0))
         # Remove button for this row.
-        theme.style_button(
-            tk.Button(row, text="×", width=2, font=(config.UI_FONT, 8),
-                      command=lambda: (row.destroy(), rows.remove(r)))
+        theme.make_button(
+            row, text="×", width=2, font=(config.UI_FONT, 8),
+            command=lambda: (row.destroy(), rows.remove(r))
         ).pack(side="left", padx=(2, 0))
         r = {"frame": row, "check_var": cv, "text_var": te, "ddl_var": de}
         rows.append(r)
@@ -148,9 +148,7 @@ def open_todo_dialog(root):
             canvas.yview_moveto(1.0)
 
     new_entry.bind("<Return>", add_item)
-    theme.style_button(
-        tk.Button(bar, text="Add", width=6, command=add_item)
-    ).pack(side="left", padx=(4, 0))
+    theme.make_button(bar, text="Add", width=6, command=add_item).pack(side="left", padx=(4, 0))
 
     # Save / Cancel.
     btns = tk.Frame(win, bg=theme.BG_ELEVATED)
@@ -176,12 +174,8 @@ def open_todo_dialog(root):
             pass
         win.destroy()
 
-    theme.style_button(
-        tk.Button(btns, text="Save", width=10, command=save)
-    ).pack(side="left", padx=3)
-    theme.style_button(
-        tk.Button(btns, text="Cancel", width=10, command=win.destroy)
-    ).pack(side="left", padx=3)
+    theme.make_button(btns, text="Save", width=10, command=save).pack(side="left", padx=3)
+    theme.make_button(btns, text="Cancel", width=10, command=win.destroy).pack(side="left", padx=3)
 
     _load()
     new_entry.focus_set()

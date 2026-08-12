@@ -101,12 +101,11 @@ def open_group_chat(root, pets, director=None):
                     insertbackground=theme.FG, relief="flat", bd=0,
                     highlightthickness=1, highlightbackground=theme.BORDER)
     entry.pack(side="left", fill="x", expand=True)
-    send_btn = theme.style_button(
-        tk.Button(bar, text="Send", width=8, command=lambda: _send()))
+    send_btn = theme.make_button(bar, text="Send", width=8, command=lambda: _send())
     send_btn.pack(side="left", padx=(4, 2))
-    theme.style_button(
-        tk.Button(bar, text="⚙", width=2,
-                  command=lambda: ai_dialog._open_settings(win, None))
+    theme.make_button(
+        bar, text="⚙", width=2,
+        command=lambda: ai_dialog._open_settings(win, None)
     ).pack(side="left", padx=2)
     entry.bind("<Return>", lambda e: _send())
     entry.focus_set()

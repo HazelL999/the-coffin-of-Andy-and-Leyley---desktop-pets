@@ -223,12 +223,12 @@ def open_ai_dialog(root, pet, director=None):
     # --- character buttons (placed under each portrait's center) ---
     btns = tk.Frame(win, bg=theme.BG, height=btn_h)
     btns.pack(fill="x", padx=10, pady=(0, 4))
-    btn_andrew = theme.style_button(
-        tk.Button(btns, text="Talk to Andrew", width=16,
-                  command=lambda: select("andrew")))
-    btn_ashley = theme.style_button(
-        tk.Button(btns, text="Talk to Ashley", width=16,
-                  command=lambda: select("ashley")))
+    btn_andrew = theme.make_button(
+        btns, text="Talk to Andrew", width=16,
+        command=lambda: select("andrew"))
+    btn_ashley = theme.make_button(
+        btns, text="Talk to Ashley", width=16,
+        command=lambda: select("ashley"))
     btn_andrew.place(anchor="center", relx=0.70, rely=0.5)
     btn_ashley.place(anchor="center", relx=0.30, rely=0.5)
 
@@ -303,12 +303,11 @@ def open_ai_dialog(root, pet, director=None):
                      insertbackground=theme.FG, relief="flat", bd=0,
                      highlightthickness=1, highlightbackground=theme.BORDER)
     entry.pack(side="left", fill="x", expand=True)
-    btn = theme.style_button(
-        tk.Button(bar, text="Say it", width=10, command=do_request))
+    btn = theme.make_button(bar, text="Say it", width=10, command=do_request)
     btn.pack(side="left", padx=(4, 2))
-    theme.style_button(
-        tk.Button(bar, text="⚙", width=2,
-                  command=lambda: _open_settings(root, status))
+    theme.make_button(
+        bar, text="⚙", width=2,
+        command=lambda: _open_settings(root, status)
     ).pack(side="left", padx=2)
     status = tk.Label(bar,
                       text="Pick a character above, then type below.",
@@ -363,5 +362,4 @@ def _open_settings(root, status_label):
         info.config(text="Saved. Get a free key at openrouter.ai/keys")
         status_label.config(text=status_label.cget("text"))
 
-    theme.style_button(
-        tk.Button(w, text="Save", width=10, command=save)).pack(pady=6)
+    theme.make_button(w, text="Save", width=10, command=save).pack(pady=6)

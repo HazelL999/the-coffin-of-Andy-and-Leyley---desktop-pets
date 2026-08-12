@@ -105,10 +105,78 @@ def style_button(btn):
     try:
         btn.config(bg=BG_ELEVATED, fg=FG, activebackground=SELECT,
                    activeforeground=FG, relief="flat", bd=0,
-                   highlightthickness=0, borderwidth=0)
+                   highlightthickness=0, borderwidth=0,
+                   disabledforeground=FG_DIM, overrelief="flat",
+                   highlightbackground=BG_ELEVATED, highlightcolor=BG_ELEVATED)
     except Exception:
         pass
     return btn
+
+
+def make_button(parent, text="", command=None, width=None, **kw):
+    """Create a dark-themed button that works on macOS. Uses a tk.Label with
+    click bindings because macOS Aqua tk.Button IGNORES bg/fg even with
+    relief=flat - a Label always honors bg/fg so the dark look is guaranteed.
+    On Windows/Linux this also works identically (Label-based button).
+    Returns the Label widget (use .pack/.place/.grid on it as normal)."""
+    import tkinter as tk
+    kw.setdefault("bg", BG_ELEVATED)
+    kw.setdefault("fg", FG)
+    kw.setdefault("font", ("Segoe UI", 9))
+    kw.setdefault("relief", "flat")
+    kw.setdefault("bd", 0)
+    kw.setdefault("padx", 10)
+    kw.setdefault("pady", 4)
+    if width is not None:
+        kw["width"] = width
+    lbl = tk.Label(parent, text=text, **kw)
+    lbl._orig_bg = BG_ELEVATED
+
+    def _enter(e):
+        try:
+            lbl.config(bg=SELECT)
+        except Exception:
+            pass
+
+    def _leave(e):
+        try:
+            lbl.config(bg=lbl._orig_bg)
+        except Exception:
+            pass
+
+    def _click(e):
+        if command:
+            try:
+                command()
+            except Exception:
+                pass
+
+    lbl.bind("<Enter>", _enter)
+    lbl.bind("<Leave>", _leave)
+    lbl.bind("<Button-1>", _click)
+    lbl.config(cursor="hand2")
+    # Expose config so callers can do btn.config(text=...) like a real Button.
+    _orig_config = lbl.config
+
+    def _config(*a, **k):
+        if "bg" in k:
+            lbl._orig_bg = k["bg"]
+        if "state" in k:
+            # track disabled state; unbind/rebind clicks accordingly
+            lbl._disabled = (k["state"] == "disabled")
+            del k["state"]
+            if lbl._disabled:
+                lbl.unbind("<Button-1>")
+                lbl.config(cursor="arrow")
+            else:
+                lbl.bind("<Button-1>", _click)
+                lbl.config(cursor="hand2")
+            if not k:
+                return
+        return _orig_config(*a, **k)
+    lbl.config = _config
+    lbl._disabled = False
+    return lbl
 
 
 def style_menu(menu):

@@ -103,13 +103,10 @@ def open_city_dialog(root, on_chosen=None):
         if on_chosen:
             on_chosen(city, lat, lon)
 
-    btn = theme.style_button(
-        tk.Button(win, text="Search", width=9, command=do_search))
+    btn = theme.make_button(win, text="Search", width=9, command=do_search)
     btn.pack(side="left", padx=(12, 4), pady=4)
-    theme.style_button(
-        tk.Button(win, text="Save", width=9, command=do_save)).pack(side="left", padx=4)
-    theme.style_button(
-        tk.Button(win, text="Close", width=9, command=win.destroy)).pack(side="left", padx=4)
+    theme.make_button(win, text="Save", width=9, command=do_save).pack(side="left", padx=4)
+    theme.make_button(win, text="Close", width=9, command=win.destroy).pack(side="left", padx=4)
 
     win.bind("<Return>", lambda e: (do_search() if not listbox.curselection()
                                     and listbox.size() == 0 else do_save()))

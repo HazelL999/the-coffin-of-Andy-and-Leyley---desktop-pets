@@ -187,7 +187,7 @@ BACKPACK_ITEMS = [
     {"name": "Andy's doll", "path": str(ROOT_DIR / "backpack" / "Andy's rabbit doll.png"), "usable": True},
     {"name": "Leyley's doll", "path": str(ROOT_DIR / "backpack" / "Leyley's rabbit doll.png"), "usable": True},
     {"name": "Talisman", "path": str(ROOT_DIR / "backpack" / "Talisman.png"), "usable": True, "count": "talisman"},
-    {"name": "Soul", "path": str(ROOT_DIR / "backpack" / "soul.png"), "usable": False, "count": "soul"},
+    {"name": "Soul", "path": str(ROOT_DIR / "Altar" / "soul.png"), "usable": False, "count": "soul"},
     {"name": "Flower", "path": str(ROOT_DIR / "backpack" / "Red Flower.png"), "usable": True, "count": "flower"},
     {"name": "Coin", "path": str(ROOT_DIR / "backpack" / "coin.png"), "usable": False, "count": "coin", "max_px": 55},
     {"name": "Pistol", "path": str(ROOT_DIR / "backpack" / "pistol.png"), "usable": True, "max_px": 70},

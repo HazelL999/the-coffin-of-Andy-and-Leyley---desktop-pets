@@ -56,11 +56,11 @@ def open_choice_dialog(root, character, mood, question, options, on_choice):
         on_choice(idx)
 
     for i, opt in enumerate(options):
-        theme.style_button(
-            tk.Button(win, text=opt["text"], width=28,
-                      font=(config.UI_FONT, 10),
-                      command=lambda i=i: pick(i),
-                      padx=12, pady=6)
+        theme.make_button(
+            win, text=opt["text"], width=28,
+            font=(config.UI_FONT, 10),
+            command=lambda i=i: pick(i),
+            padx=12, pady=6
         ).pack(padx=20, pady=3)
 
     win.protocol("WM_DELETE_WINDOW", lambda: pick(0))  # closing = first option
